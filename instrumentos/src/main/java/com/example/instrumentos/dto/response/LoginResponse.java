@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class LoginResponse {
     private Long id;
-    private String nombreUsuario;
+    private String email;
     private String rol;
     private String token; // Para JWT si se implementa en el futuro
     private boolean success;

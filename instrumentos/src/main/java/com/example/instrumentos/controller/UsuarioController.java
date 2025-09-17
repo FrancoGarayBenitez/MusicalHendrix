@@ -27,7 +27,7 @@ public class UsuarioController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
-            log.info("Intento de login para usuario: {}", loginRequest.getNombreUsuario());
+            log.info("Intento de login para usuario: {}", loginRequest.getEmail());
 
             LoginResponse response = usuarioService.autenticarUsuario(loginRequest);
 

@@ -30,7 +30,7 @@ public class UsuarioService {
     // Autenticar usuario
     public LoginResponse autenticarUsuario(LoginRequest loginRequest) {
         // Buscar usuario por email
-        Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(loginRequest.getNombreUsuario());
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(loginRequest.getEmail());
 
         if (usuarioOpt.isPresent()) {
             Usuario usuario = usuarioOpt.get();
@@ -85,10 +85,8 @@ public class UsuarioService {
         // Crear el nuevo usuario
         Usuario nuevoUsuario = new Usuario();
         nuevoUsuario.setEmail(registroRequest.getEmail());
-        // Separar el email para obtener nombre y apellido (temporal)
-        String[] partes = registroRequest.getApellido().split("@");
-        nuevoUsuario.setNombre(partes[0]);
-        nuevoUsuario.setApellido("Usuario"); // Valor por defecto
+        nuevoUsuario.setNombre(registroRequest.getNombre());
+        nuevoUsuario.setApellido(registroRequest.getApellido());
         nuevoUsuario.setContrasenia(claveEncriptada);
         nuevoUsuario.setRol(rol);
 
