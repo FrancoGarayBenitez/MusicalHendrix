@@ -1,0 +1,18 @@
+# Ignorar archivos y carpetas globales
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+node_modules/
+target/
+.env
+
+# Ignorar archivos temporales de sistema
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Ignorar archivos de configuración de editores
+.vscode/
