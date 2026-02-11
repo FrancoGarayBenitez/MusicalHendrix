@@ -1,0 +1,96 @@
+.access-denied-container {
+  max-width: 600px;
+}
+
+.access-denied-icon {
+  text-align: center;
+  font-size: 120px;
+  line-height: 1;
+  margin: 20px 0;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-15px) rotate(-5deg);
+  }
+  75% {
+    transform: translateX(15px) rotate(5deg);
+  }
+}
+
+.access-denied-details {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.access-denied-details p {
+  margin: 0;
+  color: #4a5568;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.access-denied-details strong {
+  color: #667eea;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.access-denied-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.btn-primary,
+.btn-secondary {
+  display: block;
+  padding: 14px 24px;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 0.3s;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+  background-color: #f7fafc;
+  color: #667eea;
+  border: 2px solid #667eea;
+}
+
+.btn-secondary:hover {
+  background-color: #667eea;
+  color: white;
+}
+
+@media (max-width: 600px) {
+  .access-denied-icon {
+    font-size: 80px;
+  }
+
+  .access-denied-details p {
+    font-size: 14px;
+  }
+}

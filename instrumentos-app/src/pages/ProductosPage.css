@@ -1,0 +1,43 @@
+.productos-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.productos-page .page-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.productos-page .page-header h1 {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
+.productos-page .page-header p {
+  font-size: 1.2rem;
+  color: #7f8c8d;
+}
+
+.filter-container {
+  margin-bottom: 30px;
+}
+
+.productos-container {
+  min-height: 400px;
+}
+
+@media (max-width: 768px) {
+  .productos-page {
+    padding: 20px 15px;
+  }
+
+  .productos-page .page-header h1 {
+    font-size: 2rem;
+  }
+
+  .productos-page .page-header p {
+    font-size: 1rem;
+  }
+}

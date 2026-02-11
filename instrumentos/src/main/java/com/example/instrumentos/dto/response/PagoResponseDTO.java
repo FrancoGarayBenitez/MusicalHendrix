@@ -18,6 +18,10 @@ public class PagoResponseDTO {
     private Date fechaCreacion;
     private Date fechaActualizacion;
     private Double monto;
-    private String moneda;
     private String descripcion;
+
+    // Helpers para el frontend
+    private boolean aprobado;
+    private boolean pendiente;
+    private boolean rechazado;
 }

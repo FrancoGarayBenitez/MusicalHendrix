@@ -1,50 +1,52 @@
 package com.example.instrumentos.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+public enum EstadoPedido {
+    PENDIENTE_PAGO("Pendiente de Pago", "Esperando confirmación del pago"),
+    PAGADO("Pagado", "Pago confirmado"),
+    ENVIADO("Enviado", "Pedido despachado"),
+    ENTREGADO("Entregado", "Pedido recibido por el cliente"),
+    CANCELADO("Cancelado", "Pedido cancelado");
 
-import java.util.Date;
+    private final String displayName;
+    private final String descripcion;
 
-@Entity
-@Table(name = "estados_pedido")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class EstadoPedido {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_estado_pedido")
-    private Long idEstadoPedido;
-
-    @Column(nullable = false)
-    private String estado;
-
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(nullable = false)
-    private Date fecha;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_pedido", nullable = false)
-    @JsonIgnore
-    private Pedido pedido;
-
-    // Constructor conveniente
-    public EstadoPedido(String estado, Pedido pedido) {
-        this.estado = estado;
-        this.fecha = new Date();
-        this.pedido = pedido;
+    EstadoPedido(String displayName, String descripcion) {
+        this.displayName = displayName;
+        this.descripcion = descripcion;
     }
 
-    @Override
-    public String toString() {
-        return "EstadoPedido{" +
-                "idEstadoPedido=" + idEstadoPedido +
-                ", estado='" + estado + '\'' +
-                ", fecha=" + fecha +
-                ", pedidoId=" + (pedido != null ? pedido.getIdPedido() : null) +
-                '}';
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    // Validar transiciones permitidas
+    public boolean puedeTransicionarA(EstadoPedido nuevoEstado) {
+        switch (this) {
+            case PENDIENTE_PAGO:
+                return nuevoEstado == PAGADO || nuevoEstado == CANCELADO;
+            case PAGADO:
+                return nuevoEstado == ENVIADO || nuevoEstado == CANCELADO;
+            case ENVIADO:
+                return nuevoEstado == ENTREGADO;
+            case ENTREGADO:
+            case CANCELADO:
+                return false; // Estados finales
+            default:
+                return false;
+        }
+    }
+
+    // Helper para saber si es un estado final
+    public boolean esFinal() {
+        return this == ENTREGADO || this == CANCELADO;
+    }
+
+    // Helper para saber si requiere acción del usuario
+    public boolean requiereAccionUsuario() {
+        return this == PENDIENTE_PAGO;
     }
 }

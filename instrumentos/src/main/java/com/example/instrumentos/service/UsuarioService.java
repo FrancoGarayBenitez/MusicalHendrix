@@ -1,20 +1,24 @@
 package com.example.instrumentos.service;
 
-import com.example.instrumentos.dto.request.LoginRequest;
-import com.example.instrumentos.dto.response.LoginResponse;
 import com.example.instrumentos.dto.request.RegistroRequestDTO;
+import com.example.instrumentos.dto.request.UsuarioAdminUpdateRequestDTO;
+import com.example.instrumentos.dto.response.UsuarioResponseDTO;
+import com.example.instrumentos.mapper.UsuarioMapper;
 import com.example.instrumentos.model.Rol;
 import com.example.instrumentos.model.Usuario;
-import com.example.instrumentos.repository.RolRepository;
 import com.example.instrumentos.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,65 +26,92 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
-public class UsuarioService {
+public class UsuarioService implements org.springframework.security.core.userdetails.UserDetailsService {
 
-    private final UsuarioRepository usuarioRepository;
-    private final RolRepository rolRepository;
+    private final com.example.instrumentos.repository.UsuarioRepository usuarioRepository;
 
-    // Autenticar usuario
-    public LoginResponse autenticarUsuario(LoginRequest loginRequest) {
-        // Buscar usuario por email
-        Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(loginRequest.getEmail());
+    // ✅ Inyección directa (sin @Lazy)
+    private final PasswordEncoder passwordEncoder;
 
-        if (usuarioOpt.isPresent()) {
-            Usuario usuario = usuarioOpt.get();
+    private final com.example.instrumentos.mapper.UsuarioMapper usuarioMapper;
 
-            // Verificar clave encriptada
-            String claveEncriptada = encriptarClave(loginRequest.getClave());
+    /**
+     * Implementación de UserDetailsService para Spring Security
+     * Carga el usuario por email (username)
+     */
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        log.info("🔍 Buscando usuario por email: {}", email);
 
-            if (claveEncriptada.equals(usuario.getContrasenia())) {
-                return new LoginResponse(
-                        usuario.getIdUsuario(),
-                        usuario.getEmail(),
-                        usuario.getRol().getDefinicion(),
-                        null, // No hay token por ahora
-                        true,
-                        "Inicio de sesión exitoso"
-                );
-            }
-        }
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    log.error("❌ Usuario no encontrado: {}", email);
+                    return new UsernameNotFoundException("Usuario no encontrado: " + email);
+                });
 
-        // Usuario y/o clave incorrectos
-        return new LoginResponse(
-                null,
-                null,
-                null,
-                null,
-                false,
-                "Usuario y/o clave incorrectos"
-        );
+        log.info("✅ Usuario encontrado: {} - Rol: {}", usuario.getEmail(), usuario.getRol());
+
+        // Convertir Usuario a UserDetails de Spring Security
+        return User.builder()
+                .username(usuario.getEmail())
+                .password(usuario.getContrasenia())
+                .authorities(Collections.singleton(
+                        new SimpleGrantedAuthority("ROLE_" + usuario.getRol().name())))
+                .accountExpired(false)
+                .accountLocked(!usuario.isActivo())
+                .credentialsExpired(false)
+                .disabled(!usuario.isActivo())
+                .build();
     }
 
-    // Registrar nuevo usuario
+    /**
+     * ✅ MÉTODO SIMPLIFICADO: Solo valida credenciales, NO genera JWT
+     * El JWT se genera en el AuthController
+     */
+    public Usuario autenticarUsuario(String email, String password) {
+        log.info("🔐 Validando credenciales para usuario: {}", email);
+
+        // Buscar usuario por email
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    log.warn("⚠️ Usuario no encontrado: {}", email);
+                    return new IllegalArgumentException("Usuario y/o contraseña incorrectos");
+                });
+
+        // Verificar si el usuario está activo
+        if (!usuario.isActivo()) {
+            log.warn("⚠️ Usuario inactivo: {}", email);
+            throw new IllegalStateException("El usuario está deshabilitado. Contacte al administrador.");
+        }
+
+        // Verificar contraseña usando BCrypt
+        if (!passwordEncoder.matches(password, usuario.getContrasenia())) {
+            log.warn("⚠️ Contraseña incorrecta para usuario: {}", email);
+            throw new IllegalArgumentException("Usuario y/o contraseña incorrectos");
+        }
+
+        log.info("✅ Credenciales válidas para usuario: {} - Rol: {}", email, usuario.getRol());
+
+        return usuario; // ✅ Devuelve el usuario validado (sin generar JWT aquí)
+    }
+
+    /**
+     * Registrar nuevo usuario
+     */
     public Usuario registrarUsuario(RegistroRequestDTO registroRequest) {
+        log.info("📝 Registrando nuevo usuario: {}", registroRequest.getEmail());
+
         // Verificar si el usuario ya existe
         if (usuarioRepository.existsByEmail(registroRequest.getEmail())) {
-            throw new IllegalArgumentException("El email ya está registrado");
+            log.warn("⚠️ Email ya registrado: {}", registroRequest.getEmail());
+            throw new IllegalArgumentException("El email ya está registrado: " + registroRequest.getEmail());
         }
 
-        // Obtener el rol
-        String rolNombre = registroRequest.getRol();
-        if (rolNombre == null || rolNombre.isEmpty()) {
-            rolNombre = "Visor"; // Rol por defecto
-        }
+        // Determinar el rol (por defecto USER)
+        Rol rol = registroRequest.getRol() != null ? registroRequest.getRol() : Rol.USER;
 
-        // Crear variable final para usar en lambda
-        final String rolFinal = rolNombre;
-        Rol rol = rolRepository.findByDefinicion(rolFinal)
-                .orElseThrow(() -> new IllegalArgumentException("Rol no válido: " + rolFinal));
-
-        // Encriptar la clave
-        String claveEncriptada = encriptarClave(registroRequest.getClave());
+        // Encriptar la contraseña con BCrypt
+        String claveEncriptada = passwordEncoder.encode(registroRequest.getClave());
 
         // Crear el nuevo usuario
         Usuario nuevoUsuario = new Usuario();
@@ -89,68 +120,120 @@ public class UsuarioService {
         nuevoUsuario.setApellido(registroRequest.getApellido());
         nuevoUsuario.setContrasenia(claveEncriptada);
         nuevoUsuario.setRol(rol);
+        nuevoUsuario.setActivo(true);
 
-        return usuarioRepository.save(nuevoUsuario);
+        Usuario guardado = usuarioRepository.save(nuevoUsuario);
+        log.info("✅ Usuario registrado exitosamente: {} con rol: {}", guardado.getEmail(), rol);
+
+        return guardado;
     }
 
-    // Encriptar clave con MD5
-    private String encriptarClave(String clave) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] messageDigest = md.digest(clave.getBytes());
-            BigInteger number = new BigInteger(1, messageDigest);
-            String hashtext = number.toString(16);
-
-            while (hashtext.length() < 32) {
-                hashtext = "0" + hashtext;
-            }
-
-            return hashtext;
-        } catch (NoSuchAlgorithmException e) {
-            log.error("Error al encriptar clave: {}", e.getMessage());
-            throw new RuntimeException("Error al encriptar clave", e);
-        }
-    }
-
-    // Obtener todos los usuarios
+    /**
+     * Obtener todos los usuarios
+     */
     public List<Usuario> findAll() {
         return usuarioRepository.findAll();
     }
 
-    // Buscar usuario por ID
+    /**
+     * Buscar usuario por ID
+     */
     public Optional<Usuario> findById(Long id) {
         return usuarioRepository.findById(id);
     }
 
-    // Actualizar usuario
+    /**
+     * Buscar usuario por email
+     */
+    public Optional<Usuario> findByEmail(String email) {
+        return usuarioRepository.findByEmail(email);
+    }
+
+    /**
+     * Actualizar usuario (campos básicos)
+     */
     public Usuario actualizarUsuario(Usuario usuario) {
-        // Verificar que el usuario existe
         Usuario existente = usuarioRepository.findById(usuario.getIdUsuario())
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
-        // Actualizar campos
         existente.setNombre(usuario.getNombre());
         existente.setApellido(usuario.getApellido());
         existente.setEmail(usuario.getEmail());
 
-        // Si se proporciona un nuevo rol
-        if (usuario.getRol() != null && usuario.getRol().getIdRol() != null) {
-            Rol nuevoRol = rolRepository.findById(usuario.getRol().getIdRol())
-                    .orElseThrow(() -> new IllegalArgumentException("Rol no válido"));
-            existente.setRol(nuevoRol);
+        // Si se cambió la contraseña, encriptarla
+        if (usuario.getContrasenia() != null && !usuario.getContrasenia().isEmpty()) {
+            existente.setContrasenia(passwordEncoder.encode(usuario.getContrasenia()));
         }
 
         return usuarioRepository.save(existente);
     }
 
-    // Eliminar usuario por ID
-    public void deleteById(Long id) {
-        usuarioRepository.deleteById(id);
+    /**
+     * Actualizar usuario desde panel de admin
+     */
+    public UsuarioResponseDTO actualizarUsuarioAdmin(Long id, UsuarioAdminUpdateRequestDTO updateRequest) {
+        log.info("✏️ Actualizando usuario ID: {}", id);
+
+        Usuario existente = usuarioRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado con ID: " + id));
+
+        // Actualizar rol y estado
+        existente.setRol(updateRequest.getRol());
+        existente.setActivo(updateRequest.getActivo());
+
+        // ✅ Si se proporcionó nueva contraseña, actualizarla
+        if (updateRequest.getClave() != null && !updateRequest.getClave().isEmpty()) {
+            existente.setContrasenia(passwordEncoder.encode(updateRequest.getClave()));
+            log.info("🔐 Contraseña actualizada para usuario ID: {}", id);
+        }
+
+        Usuario actualizado = usuarioRepository.save(existente);
+
+        log.info("✅ Usuario actualizado - ID: {}, Rol: {}, Activo: {}",
+                id, actualizado.getRol(), actualizado.isActivo());
+
+        return usuarioMapper.toDTO(actualizado);
     }
 
-    // Inicializar usuarios (llamado desde DataInitializer)
-    public void inicializarUsuarios() {
-        // La inicialización ahora se hace en DataInitializer
-        log.info("Inicialización de usuarios se maneja en DataInitializer");
+    /**
+     * Deshabilitar usuario (borrado lógico)
+     */
+    public void deshabilitarUsuario(Long id) {
+        log.info("🚫 Deshabilitando usuario ID: {}", id);
+
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado con ID: " + id));
+
+        usuario.setActivo(false);
+        usuarioRepository.save(usuario);
+
+        log.info("✅ Usuario deshabilitado: {}", usuario.getEmail());
+    }
+
+    /**
+     * Eliminar usuario físicamente
+     */
+    public void deleteById(Long id) {
+        log.info("🗑️ Eliminando usuario físicamente ID: {}", id);
+
+        if (!usuarioRepository.existsById(id)) {
+            throw new IllegalArgumentException("Usuario no encontrado con ID: " + id);
+        }
+
+        usuarioRepository.deleteById(id);
+        log.info("✅ Usuario eliminado con ID: {}", id);
+    }
+
+    /**
+     * Validar credenciales (método auxiliar)
+     */
+    public boolean validarCredenciales(String email, String password) {
+        Optional<Usuario> usuarioOpt = findByEmail(email);
+
+        if (usuarioOpt.isEmpty()) {
+            return false;
+        }
+
+        return passwordEncoder.matches(password, usuarioOpt.get().getContrasenia());
     }
 }

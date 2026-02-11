@@ -1,164 +1,205 @@
 .instrumento-form-container {
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    padding: 30px;
-    margin: 30px auto;
-    max-width: 900px;
-  }
-  
-  .instrumento-form {
-    width: 100%;
-    color: #000000;
-  }
-  
-  .form-title {
-    color: #2c3e50;
-    text-align: center;
-    margin-bottom: 30px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #eee;
-    font-size: 24px;
-    font-weight: 600;
-  }
-  
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  margin: 30px auto;
+  max-width: 900px;
+}
+
+.instrumento-form {
+  width: 100%;
+  color: #000000;
+}
+
+.image-preview-container {
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.image-preview {
+  max-width: 200px;
+  max-height: 200px;
+  width: auto;
+  height: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.form-title {
+  color: #2c3e50;
+  text-align: center;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 -15px 20px;
+}
+
+.form-group {
+  flex: 1;
+  min-width: 250px;
+  padding: 0 15px;
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: #f9f9f9;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  color: #000000;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+  background-color: #fff;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #aaa;
+  font-style: italic;
+}
+
+.form-group input[type="number"] {
+  text-align: right;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.form-group .error {
+  border-color: #e74c3c;
+}
+
+.error-text {
+  color: #e74c3c;
+  font-size: 13px;
+  margin-top: 5px;
+  display: block;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.btn {
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.btn-primary {
+  background-color: #3498db;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #2980b9;
+}
+
+.btn-secondary {
+  background-color: #e0e0e0;
+  color: #555;
+}
+
+.btn-secondary:hover {
+  background-color: #d0d0d0;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Estilos para campos especiales */
+#precio {
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+#idCategoria {
+  cursor: pointer;
+}
+
+/* Estilos para campos requeridos */
+.required {
+  color: #e74c3c;
+  margin-left: 3px;
+}
+
+/* Contador de caracteres */
+.char-count {
+  display: block;
+  text-align: right;
+  color: #999;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+/* Estado de carga de imagen */
+.upload-status {
+  display: inline-block;
+  margin-left: 10px;
+  color: #3498db;
+  font-size: 14px;
+}
+
+/* Responsividad */
+@media (max-width: 768px) {
   .form-row {
-    display: flex;
-    flex-wrap: wrap;
-    margin: 0 -15px 20px;
+    flex-direction: column;
   }
-  
+
   .form-group {
-    flex: 1;
-    min-width: 250px;
-    padding: 0 15px;
-    margin-bottom: 20px;
-  }
-  
-  .form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-    color: #2c3e50;
-    font-size: 14px;
-  }
-  
-  .form-group input, 
-  .form-group select, 
-  .form-group textarea {
     width: 100%;
-    padding: 12px 15px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background-color: #f9f9f9;
-    font-size: 16px;
-    transition: all 0.3s ease;
-    color: #000000;
+    min-width: 100%;
   }
-  
-  .form-group input:focus, 
-  .form-group select:focus, 
-  .form-group textarea:focus {
-    outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-    background-color: #fff;
-  }
-  
-  .form-group input::placeholder,
-  .form-group textarea::placeholder {
-    color: #aaa;
-    font-style: italic;
-  }
-  
-  .form-group input[type="number"] {
-    text-align: right;
-  }
-  
-  .form-group textarea {
-    resize: vertical;
-    min-height: 120px;
-  }
-  
-  .form-group .error {
-    border-color: #e74c3c;
-  }
-  
-  .error-text {
-    color: #e74c3c;
-    font-size: 13px;
-    margin-top: 5px;
-    display: block;
-  }
-  
+
   .form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
+    flex-direction: column-reverse;
   }
-  
+
   .btn {
-    padding: 12px 24px;
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border: none;
+    width: 100%;
   }
-  
-  .btn-primary {
-    background-color: #3498db;
-    color: white;
-  }
-  
-  .btn-primary:hover {
-    background-color: #2980b9;
-  }
-  
-  .btn-secondary {
-    background-color: #e0e0e0;
-    color: #555;
-  }
-  
-  .btn-secondary:hover {
-    background-color: #d0d0d0;
-  }
-  
-  .btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-  
-  /* Estilos para campos especiales */
-  #precio {
-    color: #2c3e50;
-    font-weight: 500;
-  }
-  
-  #idCategoria {
-    cursor: pointer;
-  }
-  
-  /* Responsividad */
-  @media (max-width: 768px) {
-    .form-row {
-      flex-direction: column;
-    }
-    
-    .form-group {
-      width: 100%;
-      min-width: 100%;
-    }
-    
-    .form-actions {
-      flex-direction: column-reverse;
-    }
-    
-    .btn {
-      width: 100%;
-    }
-  }
+}

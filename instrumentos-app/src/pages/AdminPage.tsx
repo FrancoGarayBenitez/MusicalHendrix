@@ -1,275 +1,418 @@
-import { useState, useEffect } from 'react';
-import { Instrumento, FormState } from '../types/types';
-import { useInstrumentos } from '../hooks/useInstrumentos';
-import { updateInstrumentPrice, updateInstrumentStock } from '../service/api';
-import InstrumentoGridAdmin from '../components/instrumentos/InstrumentoGridAdmin';
-import InstrumentoForm from '../components/instrumentos/InstrumentoForm';
-import Loading from '../components/common/Loading';
-import Error from '../components/common/Error';
-import { useAuth } from '../context/AuthContext';
-import { UserRol } from '../types/auth';
+import { useState } from "react";
+import { Instrumento, FormState } from "../types/types";
+import { useInstrumentos } from "../hooks/useInstrumentos";
+import { updateInstrumentPrice, updateInstrumentStock } from "../service/api";
+import InstrumentoGridAdmin from "../components/instrumentos/InstrumentoGridAdmin";
+import InstrumentoForm from "../components/instrumentos/InstrumentoForm";
+import Loading from "../components/common/Loading";
+import Error from "../components/common/Error";
+import { useAuth } from "../context/AuthContext";
+import { Navigate } from "react-router-dom";
+import "./AdminStyles.css";
 
 const AdminPage = () => {
-    const {
-        instrumentos,
-        loading,
-        error,
-        selectedCategoriaId,
-        filterByCategoria,
-        addInstrumento,
-        editInstrumento,
-        removeInstrumento,
-        refreshInstrumentos 
-    } = useInstrumentos();
+  const {
+    instrumentos,
+    loading,
+    error,
+    selectedCategoriaId,
+    filterByCategoria,
+    addInstrumento,
+    editInstrumento,
+    removeInstrumento,
+    refreshInstrumentos,
+  } = useInstrumentos();
 
-    const { user } = useAuth();
-    
-    //funcion auxiliar para obtener el rol como string
-    const getUserRol = () => {
-        if (!user?.rol) return '';
-        if (typeof user.rol === 'object' && 'definicion' in user.rol) {
-            return user.rol.definicion;
+  const { user, isAuthenticated, isAdmin } = useAuth();
+
+  const [showForm, setShowForm] = useState<boolean>(false);
+  const [currentInstrumento, setCurrentInstrumento] = useState<
+    Instrumento | undefined
+  >(undefined);
+  const [formState, setFormState] = useState<FormState>({
+    isSubmitting: false,
+    isSuccess: false,
+    isError: false,
+    message: "",
+  });
+
+  // ✅ PROTECCIÓN: Solo admin puede acceder
+  if (!isAuthenticated) {
+    console.warn("⚠️ Usuario no autenticado. Redirigiendo a login...");
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isAdmin) {
+    console.warn("⚠️ Usuario sin permisos de admin. Redirigiendo a home...");
+    return <Navigate to="/" replace />;
+  }
+
+  if (!user?.activo) {
+    console.warn("⚠️ Usuario inactivo. Redirigiendo a login...");
+    return <Navigate to="/login" replace />;
+  }
+
+  console.log("🔐 Usuario admin autenticado:", {
+    email: user.email,
+    rol: user.rol,
+    activo: user.activo,
+  });
+
+  // ✅ Formulario para crear nuevo instrumento
+  const handleAdd = () => {
+    console.log("➕ Abriendo formulario para crear instrumento");
+    setCurrentInstrumento(undefined);
+    setShowForm(true);
+    setFormState({
+      isSubmitting: false,
+      isSuccess: false,
+      isError: false,
+      message: "",
+    });
+  };
+
+  // ✅ Formulario para editar instrumento existente
+  const handleEdit = (instrumento: Instrumento) => {
+    console.log(
+      "✏️ Abriendo formulario para editar:",
+      instrumento.denominacion,
+    );
+    setCurrentInstrumento(instrumento);
+    setShowForm(true);
+    setFormState({
+      isSubmitting: false,
+      isSuccess: false,
+      isError: false,
+      message: "",
+    });
+  };
+
+  // ✅ Cerrar el formulario
+  const handleCancel = () => {
+    console.log("❌ Cancelando formulario");
+    setShowForm(false);
+    setCurrentInstrumento(undefined);
+  };
+
+  // ✅ Guardar el instrumento (crear o actualizar)
+  const handleSubmit = async (data: Omit<Instrumento, "idInstrumento">) => {
+    setFormState((prev) => ({
+      ...prev,
+      isSubmitting: true,
+      isError: false,
+      isSuccess: false,
+      message: "",
+    }));
+
+    try {
+      console.log("💾 Guardando instrumento...", data);
+
+      if (currentInstrumento?.idInstrumento) {
+        // ✅ ACTUALIZAR instrumento existente
+        const instrumentoId = currentInstrumento.idInstrumento;
+        console.log("✏️ Actualizando instrumento ID:", instrumentoId);
+
+        const result = await editInstrumento(instrumentoId.toString(), data);
+
+        if (!result) {
+          setFormState({
+            isSubmitting: false,
+            isSuccess: false,
+            isError: true,
+            message: "❌ No se pudo actualizar el instrumento",
+          });
+          return;
         }
-        return user.rol as string;
-    };
 
-    const userRol = getUserRol();
-    const isAdmin = userRol === UserRol.ADMIN;
-    const isOperador = userRol === UserRol.OPERADOR;
+        console.log("✅ Instrumento actualizado:", result);
 
-    const [showForm, setShowForm] = useState<boolean>(false);
-    const [currentInstrumento, setCurrentInstrumento] = useState<Instrumento | undefined>(undefined);
-    const [formState, setFormState] = useState<FormState>({
+        setFormState({
+          isSubmitting: false,
+          isSuccess: true,
+          isError: false,
+          message: "✅ Instrumento actualizado correctamente",
+        });
+      } else {
+        // ✅ CREAR nuevo instrumento
+        console.log("➕ Creando nuevo instrumento");
+
+        const result = await addInstrumento(data);
+
+        if (!result) {
+          setFormState({
+            isSubmitting: false,
+            isSuccess: false,
+            isError: true,
+            message: "❌ No se pudo crear el instrumento",
+          });
+          return;
+        }
+
+        console.log("✅ Instrumento creado:", result);
+
+        setFormState({
+          isSubmitting: false,
+          isSuccess: true,
+          isError: false,
+          message: "✅ Instrumento creado correctamente",
+        });
+      }
+
+      // ✅ Cerrar formulario después de 1.5s
+      setTimeout(() => {
+        setShowForm(false);
+        setCurrentInstrumento(undefined);
+        setFormState((prev) => ({ ...prev, isSuccess: false, message: "" }));
+      }, 1500);
+    } catch (err) {
+      console.error("❌ Error al guardar instrumento:", err);
+
+      setFormState({
         isSubmitting: false,
         isSuccess: false,
+        isError: true,
+        message: "❌ Error al guardar el instrumento",
+      });
+
+      setTimeout(() => {
+        setFormState((prev) => ({ ...prev, isError: false, message: "" }));
+      }, 5000);
+    }
+  };
+
+  // ✅ Eliminar un instrumento
+  const handleDelete = async (id: string | number) => {
+    try {
+      const instrumentoId = typeof id === "number" ? id : parseInt(id);
+
+      // ✅ Confirmar eliminación
+      const instrumento = instrumentos.find(
+        (i) => i.idInstrumento === instrumentoId,
+      );
+
+      if (!instrumento) {
+        console.error("❌ Instrumento no encontrado:", instrumentoId);
+        return;
+      }
+
+      const confirmDelete = window.confirm(
+        `¿Estás seguro de eliminar "${instrumento.denominacion}"?\n\nEsta acción no se puede deshacer.`,
+      );
+
+      if (!confirmDelete) {
+        console.log("🚫 Eliminación cancelada por el usuario");
+        return;
+      }
+
+      console.log("🗑️ Eliminando instrumento:", instrumentoId);
+
+      const success = await removeInstrumento(id.toString());
+
+      if (success) {
+        setFormState({
+          isSubmitting: false,
+          isSuccess: true,
+          isError: false,
+          message: "✅ Instrumento eliminado correctamente",
+        });
+
+        setTimeout(() => {
+          setFormState((prev) => ({ ...prev, isSuccess: false, message: "" }));
+        }, 3000);
+      } else {
+        setFormState({
+          isSubmitting: false,
+          isSuccess: false,
+          isError: true,
+          message: "❌ No se pudo eliminar el instrumento",
+        });
+      }
+    } catch (err) {
+      console.error("❌ Error al eliminar instrumento:", err);
+
+      setFormState({
+        isSubmitting: false,
+        isSuccess: false,
+        isError: true,
+        message: "❌ Error al eliminar el instrumento",
+      });
+
+      setTimeout(() => {
+        setFormState((prev) => ({ ...prev, isError: false, message: "" }));
+      }, 5000);
+    }
+  };
+
+  // ✅ Actualizar precio específico
+  const handlePriceUpdate = async (
+    instrumentoId: number,
+    nuevoPrecio: number,
+  ) => {
+    try {
+      console.log(
+        `💰 Actualizando precio del instrumento ${instrumentoId} → $${nuevoPrecio}`,
+      );
+
+      // ✅ Validar precio
+      if (isNaN(nuevoPrecio) || nuevoPrecio <= 0) {
+        setFormState({
+          isSubmitting: false,
+          isSuccess: false,
+          isError: true,
+          message: "❌ El precio debe ser mayor a 0",
+        });
+        return;
+      }
+
+      // ✅ Usar función específica para actualizar precio
+      await updateInstrumentPrice(instrumentoId, nuevoPrecio);
+
+      console.log("✅ Precio actualizado correctamente");
+
+      // ✅ Refrescar lista de instrumentos
+      await refreshInstrumentos(true);
+
+      setFormState({
+        isSubmitting: false,
+        isSuccess: true,
         isError: false,
-        message: ''
-    });
+        message: `✅ Precio actualizado a $${nuevoPrecio.toLocaleString("es-AR")}`,
+      });
 
-    //formulario para crear nuevo instrumento (solo admin)
-    const handleAdd = () => {
-        if (!isAdmin) return;
+      setTimeout(() => {
+        setFormState((prev) => ({ ...prev, isSuccess: false, message: "" }));
+      }, 3000);
+    } catch (err) {
+      console.error("❌ Error al actualizar precio:", err);
 
-        setCurrentInstrumento(undefined);
-        setShowForm(true);
+      setFormState({
+        isSubmitting: false,
+        isSuccess: false,
+        isError: true,
+        message: "❌ Error al actualizar el precio",
+      });
+
+      setTimeout(() => {
+        setFormState((prev) => ({ ...prev, isError: false, message: "" }));
+      }, 5000);
+    }
+  };
+
+  // ✅ Actualizar stock específico
+  const handleStockUpdate = async (instrumentoId: number, cantidad: number) => {
+    try {
+      console.log(
+        `📦 Actualizando stock del instrumento ${instrumentoId} → ${cantidad} unidades`,
+      );
+
+      // ✅ Validar cantidad
+      if (isNaN(cantidad) || cantidad < 0) {
         setFormState({
-            isSubmitting: false,
-            isSuccess: false,
-            isError: false,
-            message: ''
+          isSubmitting: false,
+          isSuccess: false,
+          isError: true,
+          message: "❌ La cantidad debe ser mayor o igual a 0",
         });
-    };
+        return;
+      }
 
-    //formulario para editar instrumento existente (admin y operador)
-    const handleEdit = (instrumento: Instrumento) => {
-        setCurrentInstrumento(instrumento);
-        setShowForm(true);
-        setFormState({
-            isSubmitting: false,
-            isSuccess: false,
-            isError: false,
-            message: ''
-        });
-    };
+      // ✅ Usar función específica para actualizar stock
+      await updateInstrumentStock(instrumentoId, cantidad);
 
-    //cerrar el formulario
-    const handleCancel = () => {
-        setShowForm(false);
-    };
+      console.log("✅ Stock actualizado correctamente");
 
-    //guardar el instrumento (crear o actualizar)
-    const handleSubmit = async (data: Omit<Instrumento, 'idInstrumento'>) => {
-        setFormState(prev => ({ ...prev, isSubmitting: true, isError: false, message: '' }));
+      // ✅ Refrescar lista de instrumentos
+      await refreshInstrumentos(true);
 
-        try {
-            console.log('Datos recibidos en AdminPage:', data);
-            console.log('Instrumento actual:', currentInstrumento);
+      setFormState({
+        isSubmitting: false,
+        isSuccess: true,
+        isError: false,
+        message: `✅ Stock actualizado a ${cantidad} ${cantidad === 1 ? "unidad" : "unidades"}`,
+      });
 
-            if (currentInstrumento) {
-                //usa idInstrumento o codigo como ID
-                const instrumentoId = currentInstrumento.idInstrumento || currentInstrumento.codigo;
-                console.log('Actualizando instrumento con ID:', instrumentoId);
-                const result = await editInstrumento(instrumentoId.toString(), data);
-                console.log('Resultado de actualización:', result);
+      setTimeout(() => {
+        setFormState((prev) => ({ ...prev, isSuccess: false, message: "" }));
+      }, 3000);
+    } catch (err) {
+      console.error("❌ Error al actualizar stock:", err);
 
-                setFormState({
-                    isSubmitting: false,
-                    isSuccess: true,
-                    isError: false,
-                    message: 'Instrumento actualizado correctamente'
-                });
-            } else if (isAdmin) {
-                //admin puede crear nuevos instrumentos
-                await addInstrumento(data);
-                setFormState({
-                    isSubmitting: false,
-                    isSuccess: true,
-                    isError: false,
-                    message: 'Instrumento creado correctamente'
-                });
-            }
+      setFormState({
+        isSubmitting: false,
+        isSuccess: false,
+        isError: true,
+        message: "❌ Error al actualizar el stock",
+      });
 
-            setTimeout(() => {
-                setShowForm(false);
-            }, 1500);
+      setTimeout(() => {
+        setFormState((prev) => ({ ...prev, isError: false, message: "" }));
+      }, 5000);
+    }
+  };
 
-        } catch (error) {
-            console.error('Error completo en handleSubmit:', error);
-            setFormState({
-                isSubmitting: false,
-                isSuccess: false,
-                isError: true,
-                message: 'Error al guardar el instrumento'
-            });
-        }
-    };
+  // ✅ Mostrar loading mientras carga
+  if (loading && instrumentos.length === 0) {
+    return <Loading message="Cargando instrumentos..." />;
+  }
 
-    //eliminar un instrumento (solo admin)
-    const handleDelete = async (id: string | number) => {
-        if (!isAdmin) return;
-        await removeInstrumento(id.toString());
-    };
+  // ✅ Mostrar error si falla la carga y no hay formulario abierto
+  if (error && !showForm) {
+    return <Error message={error} />;
+  }
 
-    //funcion para actualizar precio especifico
-    const handlePriceUpdate = async (instrumentoId: number, nuevoPrecio: number) => {
-        try {
-            console.log(`Actualizando precio del instrumento ${instrumentoId} a ${nuevoPrecio}`);
-            
-            //usa la funcion especifica para actualizar precio
-            await updateInstrumentPrice(instrumentoId, nuevoPrecio);
-            
-            //recargar la lista de instrumentos
-            if (refreshInstrumentos) {
-                await refreshInstrumentos(true);
-            } else {
-                window.location.reload();
-            }
-            
-            setFormState({
-                isSubmitting: false,
-                isSuccess: true,
-                isError: false,
-                message: 'Precio actualizado correctamente'
-            });
-            
-            setTimeout(() => {
-                setFormState(prev => ({ ...prev, isSuccess: false, message: '' }));
-            }, 3000);
-            
-        } catch (error) {
-            console.error('Error actualizando precio:', error);
-            setFormState({
-                isSubmitting: false,
-                isSuccess: false,
-                isError: true,
-                message: 'Error al actualizar el precio'
-            });
-            
-            setTimeout(() => {
-                setFormState(prev => ({ ...prev, isError: false, message: '' }));
-            }, 5000);
-        }
-    };
-
-    //actualizar stock especifico
-    const handleStockUpdate = async (instrumentoId: number, cantidad: number) => {
-        try {
-            console.log(`Actualizando stock del instrumento ${instrumentoId} - cantidad: ${cantidad}`);
-            
-            //funcion especifica para actualizar stock
-            await updateInstrumentStock(instrumentoId, cantidad);
-            
-            //recargar la lista de instrumentos
-            if (refreshInstrumentos) {
-                await refreshInstrumentos(true);
-            } else {
-                window.location.reload();
-            }
-            
-            setFormState({
-                isSubmitting: false,
-                isSuccess: true,
-                isError: false,
-                message: 'Stock actualizado correctamente'
-            });
-            
-            setTimeout(() => {
-                setFormState(prev => ({ ...prev, isSuccess: false, message: '' }));
-            }, 3000);
-            
-        } catch (error) {
-            console.error('Error actualizando stock:', error);
-            setFormState({
-                isSubmitting: false,
-                isSuccess: false,
-                isError: true,
-                message: 'Error al actualizar el stock'
-            });
-            
-            setTimeout(() => {
-                setFormState(prev => ({ ...prev, isError: false, message: '' }));
-            }, 5000);
-        }
-    };
-
-    if (loading && instrumentos.length === 0) return <Loading />;
-    if (error && !showForm) return <Error message={error} />;
-
-    return (
-        <div className="admin-page">
-            <div className="page-header">
-                <h1>Panel de Administración</h1>
-                <p>
-                    {isAdmin
-                        ? "Gestiona los instrumentos musicales de la tienda"
-                        : "Visualiza y edita instrumentos musicales de la tienda"}
-                </p>
-
-                {isOperador && (
-                    <div className="role-info" style={{ marginTop: '10px', color: '#666' }}>
-                        <p>Como operador, puedes editar instrumentos pero no crear nuevos ni eliminarlos.</p>
-                    </div>
-                )}
-            </div>
-
-            {formState.isSuccess && (
-                <div className="alert alert-success">
-                    {formState.message}
-                </div>
-            )}
-
-            {formState.isError && (
-                <div className="alert alert-error">
-                    {formState.message}
-                </div>
-            )}
-
-            {showForm ? (
-                <div className="form-container" style={{ marginTop: '20px' }}>
-                    <InstrumentoForm
-                        instrumento={currentInstrumento}
-                        onSubmit={handleSubmit}
-                        onCancel={handleCancel}
-                        isSubmitting={formState.isSubmitting}
-                    />
-                </div>
-            ) : (
-                <InstrumentoGridAdmin
-                    instrumentos={instrumentos}
-                    loading={loading}
-                    error={error}
-                    selectedCategoriaId={selectedCategoriaId}
-                    onFilterChange={filterByCategoria}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onAdd={handleAdd}
-                    onPriceUpdate={handlePriceUpdate}
-                    onStockUpdate={handleStockUpdate}
-                    isAdmin={isAdmin}
-                />
-            )}
+  return (
+    <div className="admin-page">
+      {/* Header de la página */}
+      <div className="page-header">
+        <h1>🎸 Panel de Administración</h1>
+        <p>Gestiona los instrumentos musicales de la tienda</p>
+        <div className="admin-info">
+          <span className="admin-user">
+            👤 {user.email} <span className="role-badge admin">ADMIN</span>
+          </span>
         </div>
-    );
+      </div>
+
+      {/* Mensajes de feedback */}
+      {formState.isSuccess && (
+        <div className="alert alert-success" role="alert">
+          {formState.message}
+        </div>
+      )}
+
+      {formState.isError && (
+        <div className="alert alert-error" role="alert">
+          {formState.message}
+        </div>
+      )}
+
+      {/* Formulario o grilla de instrumentos */}
+      {showForm ? (
+        <div className="form-container">
+          <InstrumentoForm
+            instrumento={currentInstrumento}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            isSubmitting={formState.isSubmitting}
+          />
+        </div>
+      ) : (
+        <InstrumentoGridAdmin
+          instrumentos={instrumentos}
+          loading={loading}
+          error={error}
+          selectedCategoriaId={selectedCategoriaId}
+          onFilterChange={filterByCategoria}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onAdd={handleAdd}
+          onPriceUpdate={handlePriceUpdate}
+          onStockUpdate={handleStockUpdate}
+          isAdmin={isAdmin}
+        />
+      )}
+    </div>
+  );
 };
 
 export default AdminPage;

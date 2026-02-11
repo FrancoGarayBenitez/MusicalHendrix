@@ -1,109 +1,135 @@
-import { useState, FormEvent } from 'react';
-import { Link } from 'react-router-dom';
-import './AuthPages.css';
+import { useState, FormEvent } from "react";
+import { Link, Navigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { authService } from "../service/authService";
+import "./AuthPages.css";
 
 const ForgotPasswordPage = () => {
-    const [email, setEmail] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated } = useAuth();
 
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault();
+  // ✅ Si ya está autenticado, redirigir
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
 
-        if (!email) {
-            setError('Por favor ingresa tu email');
-            return;
-        }
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            setError('Por favor ingresa un email válido');
-            return;
-        }
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
 
-        try {
-            setLoading(true);
-            setError(null);
+    // ✅ Validación de email
+    if (!email.trim()) {
+      setError("❌ Por favor ingresa tu email");
+      return;
+    }
 
-            const response = await fetch('http://localhost:8080/api/auth/forgot-password', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email }),
-            });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError("❌ Por favor ingresa un email válido");
+      return;
+    }
 
-            const data = await response.json();
+    try {
+      setLoading(true);
+      setError(null);
+      setMessage(null);
 
-            if (response.ok) {
-                setMessage(data.message);
-            } else {
-                setError(data.error || 'Error al enviar solicitud');
-            }
-        } catch (err) {
-            setError('Error de conexión. Intenta nuevamente.');
-        } finally {
-            setLoading(false);
-        }
-    };
+      console.log("📧 Enviando solicitud de recuperación...", email.trim());
 
-    return (
-        <div className="auth-page">
-            <div className="auth-container">
-                <h1 className="auth-title">Recuperar Contraseña</h1>
+      // ✅ Usar authService centralizado
+      const response = await authService.forgotPassword(
+        email.trim().toLowerCase(),
+      );
 
-                {message ? (
-                    <div className="auth-success">
-                        <p>{message}</p>
-                        <div className="auth-links">
-                            <Link to="/login" className="auth-link">Volver al login</Link>
-                        </div>
-                    </div>
-                ) : (
-                    <>
-                        <p className="auth-description">
-                            Ingresa tu email y te enviaremos un enlace para recuperar tu contraseña.
-                        </p>
+      console.log("✅ Solicitud enviada exitosamente");
 
-                        {error && (
-                            <div className="auth-error">
-                                {error}
-                            </div>
-                        )}
+      setMessage(
+        response.message ||
+          "✅ Si el email existe, recibirás un enlace de recuperación en breve.",
+      );
+    } catch (err) {
+      console.error("❌ Error al enviar solicitud:", err);
+      setError(
+        "❌ Error al enviar la solicitud. Por favor, intenta nuevamente.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-                        <form className="auth-form" onSubmit={handleSubmit}>
-                            <div className="form-group">
-                                <label htmlFor="email">Email</label>
-                                <input
-                                    type="email"
-                                    id="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    disabled={loading}
-                                    placeholder="Ingresa tu email"
-                                />
-                            </div>
-
-                            <button
-                                type="submit"
-                                className="auth-button"
-                                disabled={loading}
-                            >
-                                {loading ? 'Enviando...' : 'Enviar enlace de recuperación'}
-                            </button>
-                        </form>
-
-                        <div className="auth-links">
-                            <p>
-                                ¿Recordaste tu contraseña?{' '}
-                                <Link to="/login" className="auth-link">Iniciar sesión</Link>
-                            </p>
-                        </div>
-                    </>
-                )}
-            </div>
+  return (
+    <div className="auth-page">
+      <div className="auth-container">
+        <div className="auth-header">
+          <h1 className="auth-title">🔑 Recuperar Contraseña</h1>
+          <p className="auth-subtitle">
+            Te enviaremos un enlace para restablecer tu contraseña
+          </p>
         </div>
-    );
+
+        {message ? (
+          <div className="success-container">
+            <div className="auth-success" role="alert">
+              <p>{message}</p>
+            </div>
+            <div className="auth-links">
+              <Link to="/login" className="auth-link btn-back">
+                ← Volver al login
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <>
+            {error && (
+              <div className="auth-error" role="alert">
+                {error}
+              </div>
+            )}
+
+            <form className="auth-form" onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label htmlFor="email">Email *</label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (error) setError(null);
+                  }}
+                  disabled={loading}
+                  placeholder="ejemplo@email.com"
+                  required
+                  autoComplete="email"
+                  autoFocus
+                />
+                <small className="form-hint">
+                  Ingresa el email con el que te registraste
+                </small>
+              </div>
+
+              <button type="submit" className="auth-button" disabled={loading}>
+                {loading
+                  ? "⏳ Enviando..."
+                  : "📧 Enviar enlace de recuperación"}
+              </button>
+            </form>
+
+            <div className="auth-links">
+              <p>
+                ¿Recordaste tu contraseña?{" "}
+                <Link to="/login" className="auth-link">
+                  Iniciar sesión
+                </Link>
+              </p>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default ForgotPasswordPage;

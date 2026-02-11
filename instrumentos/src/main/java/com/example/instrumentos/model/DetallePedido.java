@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "DetallePedido")
+@Table(name = "detalle_pedido")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -14,32 +14,50 @@ public class DetallePedido {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_detalle_pedido")
     private Long idDetallePedido;
 
-    @ManyToOne
-    @JoinColumn(name = "idPedido")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_pedido", nullable = false)
     @JsonIgnore
+    @ToString.Exclude
     private Pedido pedido;
 
-    @ManyToOne
-    @JoinColumn(name = "id_instrumento", insertable = false, updatable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "detallesPedido", "historialPrecios"})
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_instrumento", nullable = false)
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler", "detallesPedido", "historialPrecios" })
     private Instrumento instrumento;
 
-    // AGREGAR ESTE CAMPO:
-    @Column(name = "id_instrumento")
-    private Long instrumentoId;
+    @Column(name = "cantidad", nullable = false)
+    private Integer cantidad;
 
-    @Column(name = "precio_unitario")
+    @Column(name = "precio_unitario", nullable = false)
     private Double precioUnitario;
 
-    private Integer cantidad;
+    // Constructor conveniente
+    public DetallePedido(Pedido pedido, Instrumento instrumento, Integer cantidad, Double precioUnitario) {
+        this.pedido = pedido;
+        this.instrumento = instrumento;
+        this.cantidad = cantidad;
+        this.precioUnitario = precioUnitario;
+    }
+
+    // Helper para calcular subtotal
+    public Double getSubtotal() {
+        return cantidad * precioUnitario;
+    }
+
+    // Helper para obtener el ID del instrumento
+    @Transient
+    public Long getInstrumentoId() {
+        return instrumento != null ? instrumento.getIdInstrumento() : null;
+    }
 
     @Override
     public String toString() {
         return "DetallePedido{" +
                 "idDetallePedido=" + idDetallePedido +
-                ", instrumentoId=" + instrumentoId +
+                ", instrumentoId=" + getInstrumentoId() +
                 ", cantidad=" + cantidad +
                 ", precioUnitario=" + precioUnitario +
                 ", pedidoId=" + (pedido != null ? pedido.getIdPedido() : null) +

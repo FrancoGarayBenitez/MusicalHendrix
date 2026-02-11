@@ -1,53 +1,79 @@
-import React, { createContext, useContext, ReactNode } from 'react';
-import { useCarrito } from '../hooks/useCarrito';
-import { Instrumento } from '../types/types';
-import { CarritoItem } from '../types/pedido';
+import React, { createContext, useContext, ReactNode } from "react";
+import { useCarrito } from "../hooks/useCarrito";
+import { Instrumento } from "../types/types";
+import { CarritoItem, PedidoResponse } from "../types/pedido";
 
-//interface para el contexto
+/**
+ * Interface para el contexto del carrito
+ * Define todos los métodos y propiedades disponibles
+ */
 interface CarritoContextType {
-    items: CarritoItem[];
-    mostrarCarrito: boolean;
-    mensajePedido: string | null;
-    loading: boolean;
-    error: string | null;
-    totalItems: number;
-    totalPrecio: number;
-    agregarAlCarrito: (instrumento: Instrumento, cantidad?: number) => void;
-    actualizarCantidad: (instrumentoId: string, cantidad: number) => void;
-    eliminarDelCarrito: (instrumentoId: string) => void;
-    vaciarCarrito: () => void;
-    toggleCarrito: () => void;
-    guardarPedido: () => Promise<any>;
-    limpiarMensaje: () => void;
+  // Estado
+  items: CarritoItem[];
+  mostrarCarrito: boolean;
+  mensajePedido: string | null;
+  loading: boolean;
+  error: string | null;
+  totalItems: number;
+  totalPrecio: number;
+  pedidoPendiente: PedidoResponse | null; // ✅ NUEVO
+
+  // Métodos del carrito
+  agregarAlCarrito: (instrumento: Instrumento, cantidad?: number) => void;
+  actualizarCantidad: (instrumentoId: string, cantidad: number) => void;
+  eliminarDelCarrito: (instrumentoId: string) => void;
+  vaciarCarrito: () => void;
+  toggleCarrito: () => void;
+
+  // Métodos de pedido
+  guardarPedido: () => Promise<PedidoResponse | null>;
+  limpiarMensaje: () => void;
+  limpiarCarritoDespuesDePago: () => void;
+  limpiarPedidoPendiente: () => void;
+  verificarPedidoPendienteRemoto: () => Promise<void>;
 }
 
-//crear el contexto
+/**
+ * Crear el contexto del carrito
+ */
 const CarritoContext = createContext<CarritoContextType | undefined>(undefined);
 
-//hook para usar el contexto
+/**
+ * Hook para usar el contexto del carrito
+ * Lanza error si se usa fuera del provider
+ */
 export const useCarritoContext = () => {
-    const context = useContext(CarritoContext);
-    if (!context) {
-        throw new Error('useCarritoContext debe ser usado dentro de un CarritoProvider');
-    }
-    return context;
+  const context = useContext(CarritoContext);
+  if (!context) {
+    throw new Error(
+      "useCarritoContext debe ser usado dentro de un CarritoProvider",
+    );
+  }
+  return context;
 };
 
-//props del proveedor
+/**
+ * Props del proveedor
+ */
 interface CarritoProviderProps {
-    children: ReactNode;
+  children: ReactNode;
 }
 
-//proveedor del contexto
-export const CarritoProvider: React.FC<CarritoProviderProps> = ({ children }) => {
-    //usa useCarrito para la lógica
-    const carrito = useCarrito();
+/**
+ * Proveedor del contexto del carrito
+ * Envuelve la aplicación y proporciona acceso al carrito
+ */
+export const CarritoProvider: React.FC<CarritoProviderProps> = ({
+  children,
+}) => {
+  // ✅ Usa el hook useCarrito para la lógica del carrito
+  const carrito = useCarrito();
 
-    return (
-        <CarritoContext.Provider value={carrito}>
-            {children}
-        </CarritoContext.Provider>
-    );
+  return (
+    <CarritoContext.Provider value={carrito}>
+      {children}
+    </CarritoContext.Provider>
+  );
 };
 
-//Contexto CarritoContext para compartir el estado del carrito en toda la aplicación.
+export default CarritoContext;

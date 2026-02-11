@@ -9,7 +9,16 @@ import java.util.Optional;
 
 @Repository
 public interface PagoRepository extends JpaRepository<Pago, Long> {
-    List<Pago> findByPedido_IdPedido(Long idPedido);
+
+    // Buscar pago por preference ID de MercadoPago
     Optional<Pago> findByMercadoPagoPreferenceId(String preferenceId);
-    Optional<Pago> findByMercadoPagoPaymentId(String paymentId);
+
+    // Buscar todos los pagos de un pedido
+    List<Pago> findByPedido_IdPedido(Long pedidoId);
+
+    // Buscar pagos de un pedido con un estado específico
+    Optional<Pago> findByPedido_IdPedidoAndEstado(Long pedidoId, String estado);
+
+    // Buscar pagos por estado
+    List<Pago> findByEstado(String estado);
 }

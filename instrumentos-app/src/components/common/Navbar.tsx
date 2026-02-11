@@ -22,18 +22,8 @@ const Navbar = () => {
     setMenuOpen(false);
   };
 
-  //obtengo el rol como string
-  const getUserRol = () => {
-    if (!user?.rol) return "";
-    //si rol es un objeto, usa su propiedad definicion
-    if (typeof user.rol === "object" && "definicion" in user.rol) {
-      return user.rol.definicion;
-    }
-    //si rol es un string, lo usa directamente
-    return user.rol as string;
-  };
-
-  const userRol = getUserRol();
+  // Rol del usuario (ADMIN | USER)
+  const userRol: UserRol | undefined = user?.rol;
 
   return (
     <nav className="navbar">
@@ -66,7 +56,7 @@ const Navbar = () => {
           </Link>
         </li>
 
-        {/* Mostrar Mis Pedidos para usuarios autenticados (no admin) */}
+        {/* Mis Pedidos para usuarios autenticados (no admin) */}
         {isAuthenticated && userRol !== UserRol.ADMIN && (
           <li className="navbar-item">
             <Link
@@ -74,15 +64,6 @@ const Navbar = () => {
               className={`navbar-link ${isActive("/mis-pedidos")}`}
             >
               Mis Pedidos
-            </Link>
-          </li>
-        )}
-
-        {/* Menu para OPERADOR */}
-        {isAuthenticated && userRol === UserRol.OPERADOR && (
-          <li className="navbar-item">
-            <Link to="/admin" className={`navbar-link ${isActive("/admin")}`}>
-              Gestión de Instrumentos
             </Link>
           </li>
         )}
@@ -103,7 +84,7 @@ const Navbar = () => {
                 <li>
                   <Link
                     to="/admin"
-                    className={isActive("/admin")}
+                    className={`navbar-link ${isActive("/admin")}`}
                     onClick={() => setAdminMenuOpen(false)}
                   >
                     Gestión de Instrumentos
@@ -111,8 +92,8 @@ const Navbar = () => {
                 </li>
                 <li>
                   <Link
-                    to="/gestion-usuarios"
-                    className={isActive("/gestion-usuarios")}
+                    to="/admin/usuarios"
+                    className={`navbar-link ${isActive("/admin/usuarios")}`}
                     onClick={() => setAdminMenuOpen(false)}
                   >
                     Gestión de Usuarios
@@ -120,8 +101,8 @@ const Navbar = () => {
                 </li>
                 <li>
                   <Link
-                    to="/gestion-pedidos"
-                    className={isActive("/gestion-pedidos")}
+                    to="/admin/pedidos"
+                    className={`navbar-link ${isActive("/admin/pedidos")}`}
                     onClick={() => setAdminMenuOpen(false)}
                   >
                     Gestión de Pedidos
@@ -132,7 +113,7 @@ const Navbar = () => {
           </li>
         )}
 
-        {/* Enlaces de autenticacion */}
+        {/* Enlaces de autenticación */}
         {!isAuthenticated ? (
           <>
             <li className="navbar-item">
@@ -171,7 +152,6 @@ const Navbar = () => {
         )}
       </ul>
 
-      {/* Icono del carrito */}
       <CarritoIcon />
     </nav>
   );

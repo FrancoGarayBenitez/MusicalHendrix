@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -20,9 +21,6 @@ public class Instrumento {
     @Column(name = "id_instrumento")
     private Long idInstrumento;
 
-    @Column(nullable = false, unique = true)
-    private String codigo;
-
     @Column(nullable = false)
     private String denominacion;
 
@@ -30,7 +28,7 @@ public class Instrumento {
     private String marca;
 
     @Column(nullable = false)
-    private Integer stock;
+    private Integer stock = 0;
 
     @Column(columnDefinition = "TEXT")
     private String descripcion;
@@ -41,41 +39,48 @@ public class Instrumento {
     // Relación con CategoriaInstrumento
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_categoria_instrumento", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "instrumentos"})
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler", "instrumentos" })
     private CategoriaInstrumento categoriaInstrumento;
 
     // Relación con DetallePedido
-    @OneToMany(mappedBy = "instrumento")
+    @OneToMany(mappedBy = "instrumento", fetch = FetchType.LAZY)
     @JsonIgnore
-    private List<DetallePedido> detallesPedido;
+    private List<DetallePedido> detallesPedido = new ArrayList<>();
 
     // Relación con HistorialPrecioInstrumento
-    @OneToMany(mappedBy = "instrumento", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "instrumento", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
-    private List<HistorialPrecioInstrumento> historialPrecios;
+    private List<HistorialPrecio> historialPrecios = new ArrayList<>();
 
-    // Método para obtener el precio actual
-    @Transient
-    public Double getPrecioActual() {
-        if (historialPrecios != null && !historialPrecios.isEmpty()) {
-            return historialPrecios.stream()
-                    .max((h1, h2) -> h1.getFecha().compareTo(h2.getFecha()))
-                    .map(HistorialPrecioInstrumento::getPrecio)
-                    .orElse(0.0);
+    // Helper para verificar stock disponible
+    public boolean tieneStockDisponible(Integer cantidad) {
+        return this.stock >= cantidad;
+    }
+
+    // Helper para descontar stock
+    public void descontarStock(Integer cantidad) {
+        if (!tieneStockDisponible(cantidad)) {
+            throw new IllegalStateException(
+                    "Stock insuficiente para " + this.denominacion +
+                            ". Disponible: " + this.stock + ", Solicitado: " + cantidad);
         }
-        return 0.0;
+        this.stock -= cantidad;
+    }
+
+    // Helper para reponer stock
+    public void reponerStock(Integer cantidad) {
+        this.stock += cantidad;
     }
 
     @Override
     public String toString() {
         return "Instrumento{" +
                 "idInstrumento=" + idInstrumento +
-                ", codigo='" + codigo + '\'' +
                 ", denominacion='" + denominacion + '\'' +
                 ", marca='" + marca + '\'' +
                 ", stock=" + stock +
-                ", categoriaId=" + (categoriaInstrumento != null ?
-                categoriaInstrumento.getIdCategoriaInstrumento() : null) +
+                ", categoriaId="
+                + (categoriaInstrumento != null ? categoriaInstrumento.getIdCategoriaInstrumento() : null) +
                 '}';
     }
 }

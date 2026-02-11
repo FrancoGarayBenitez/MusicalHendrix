@@ -10,6 +10,9 @@ import java.util.stream.Collectors;
 @Component
 public class PagoMapper {
 
+    /**
+     * Convierte una entidad Pago a PagoResponseDTO
+     */
     public PagoResponseDTO toDTO(Pago pago) {
         if (pago == null) {
             return null;
@@ -24,15 +27,22 @@ public class PagoMapper {
         dto.setFechaCreacion(pago.getFechaCreacion());
         dto.setFechaActualizacion(pago.getFechaActualizacion());
         dto.setMonto(pago.getMonto());
-        dto.setMoneda(pago.getMoneda());
         dto.setDescripcion(pago.getDescripcion());
+
+        // Agregar helpers de estado
+        dto.setAprobado(pago.isAprobado());
+        dto.setPendiente(pago.isPendiente());
+        dto.setRechazado(pago.isRechazado());
 
         return dto;
     }
 
+    /**
+     * Convierte una lista de Pagos a lista de DTOs
+     */
     public List<PagoResponseDTO> toDTOList(List<Pago> pagos) {
-        if (pagos == null) {
-            return null;
+        if (pagos == null || pagos.isEmpty()) {
+            return List.of();
         }
 
         return pagos.stream()

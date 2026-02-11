@@ -1,0 +1,67 @@
+.mis-pedidos-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.mis-pedidos-page .page-header {
+  text-align: center;
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.mis-pedidos-page .page-header h1 {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
+.mis-pedidos-page .page-header p {
+  font-size: 1.1rem;
+  color: #7f8c8d;
+}
+
+.mis-pedidos-page .page-header strong {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.page-actions {
+  margin-top: 40px;
+  text-align: center;
+}
+
+.btn-secondary {
+  display: inline-block;
+  padding: 14px 28px;
+  background-color: #f7fafc;
+  color: #667eea;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s;
+}
+
+.btn-secondary:hover {
+  background-color: #667eea;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+@media (max-width: 768px) {
+  .mis-pedidos-page {
+    padding: 20px 15px;
+  }
+
+  .mis-pedidos-page .page-header h1 {
+    font-size: 2rem;
+  }
+
+  .mis-pedidos-page .page-header p {
+    font-size: 1rem;
+  }
+}

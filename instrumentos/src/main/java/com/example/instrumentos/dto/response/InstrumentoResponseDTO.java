@@ -8,14 +8,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class InstrumentoResponseDTO {
-    private Long id;
-    private String codigo;
+    private Long idInstrumento;
     private String denominacion;
     private String marca;
     private Integer stock;
     private String descripcion;
     private String imagen;
     private Double precioActual;
-    private String categoria;
-    private Long categoriaId;
+    private CategoriaResponseDTO categoriaInstrumento;
 }

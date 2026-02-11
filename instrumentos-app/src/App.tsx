@@ -1,35 +1,49 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Navbar from './components/common/Navbar';
-import Footer from './components/common/Footer';
-import HomePage from './pages/HomePage';
-import ProductosPage from './pages/ProductosPage';
-import DondeEstamosPage from './pages/DondeEstamosPage';
-import DetalleInstrumentoPage from './pages/DetalleInstrumentoPage';
-import AdminPage from './pages/AdminPage';
-import LoginPage from './pages/LoginPage';
-import RegistroPage from './pages/RegistroPage';
-import GestionUsuariosPage from './pages/GestionUsuariosPage';
-import AccesoDenegadoPage from './pages/AccesoDenegadoPage';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-import PaymentSuccessPage from './pages/payment/PaymentSuccessPage';
-import PaymentFailurePage from './pages/payment/PaymentFailurePage';
-import PaymentPendingPage from './pages/payment/PaymentPendingPage';
-import PaymentRetryPage from './pages/payment/PaymentRetryPage';
+// ===== CONTEXT =====
+import { AuthProvider } from "./context/AuthContext";
+import { CarritoProvider } from "./context/CarritoContext";
 
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
+// ===== LAYOUT COMPONENTS =====
+import Navbar from "./components/common/Navbar";
+import Footer from "./components/common/Footer";
+import CarritoDrawer from "./components/carrito/CarritoDrawer";
+import ProtectedRoute from "./components/common/ProtectedRoute";
 
-import MisPedidosPage from './pages/MisPedidosPage';
-import GestionPedidosPage from './pages/GestionPedidosPage';
+// ===== PUBLIC PAGES =====
+import HomePage from "./pages/HomePage";
+import ProductosPage from "./pages/ProductosPage";
+import DondeEstamosPage from "./pages/DondeEstamosPage";
+import DetalleInstrumentoPage from "./pages/DetalleInstrumentoPage";
+import AccesoDenegadoPage from "./pages/AccesoDenegadoPage";
 
-import { CarritoProvider } from './context/CarritoContext';
-import { AuthProvider } from './context/AuthContext';
-import ProtectedRoute from './components/common/ProtectedRoute';
-import CarritoDrawer from './components/carrito/CarritoDrawer';
-import { UserRol } from './types/auth';
-import './App.css';
-import './components/carrito/Carrito.css';
-import './pages/AdminStyles.css';
+// ===== AUTH PAGES =====
+import LoginPage from "./pages/LoginPage";
+import RegistroPage from "./pages/RegistroPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+
+// ===== USER PAGES (Authenticated) =====
+import MisPedidosPage from "./pages/MisPedidosPage";
+
+// ===== PAYMENT PAGES ===== ✅ NUEVO
+import PaymentSuccessPage from "./pages/payment/PaymentSuccessPage";
+import PaymentFailurePage from "./pages/payment/PaymentFailurePage";
+import PaymentPendingPage from "./pages/payment/PaymentPendingPage";
+import PaymentRedirectPage from "./pages/payment/PaymentRedirectPage";
+
+// ===== ADMIN PAGES =====
+import AdminPage from "./pages/AdminPage";
+import GestionUsuariosPage from "./pages/GestionUsuariosPage";
+import GestionPedidosPage from "./pages/GestionPedidosPage";
+
+// ===== TYPES =====
+import { UserRol } from "./types/auth";
+
+// ===== STYLES =====
+import "./App.css";
+import "./components/carrito/Carrito.css";
+import "./pages/AdminStyles.css";
 
 function App() {
   return (
@@ -38,42 +52,94 @@ function App() {
         <Router>
           <div className="app">
             <Navbar />
+
             <main className="main-content">
               <Routes>
-                {/* Rutas publicas */}
+                {/* ===== RUTAS PÚBLICAS ===== */}
                 <Route path="/" element={<HomePage />} />
                 <Route path="/productos" element={<ProductosPage />} />
                 <Route path="/donde-estamos" element={<DondeEstamosPage />} />
-                <Route path="/instrumento/:id" element={<DetalleInstrumentoPage />} />
+                <Route
+                  path="/instrumento/:id"
+                  element={<DetalleInstrumentoPage />}
+                />
+                <Route
+                  path="/acceso-denegado"
+                  element={<AccesoDenegadoPage />}
+                />
+
+                {/* ===== RUTAS DE AUTENTICACIÓN (públicas) ===== */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/registro" element={<RegistroPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />  {/* NUEVA */}
-                <Route path="/reset-password" element={<ResetPasswordPage />} />    {/* NUEVA */}
-                <Route path="/acceso-denegado" element={<AccesoDenegadoPage />} />
+                <Route
+                  path="/forgot-password"
+                  element={<ForgotPasswordPage />}
+                />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-                {/* Rutas protegidas para ADMIN */}
-                <Route element={<ProtectedRoute allowedRoles={[UserRol.ADMIN]} />}>
-                  <Route path="/gestion-usuarios" element={<GestionUsuariosPage />} />
-                  <Route path="/gestion-pedidos" element={<GestionPedidosPage />} />
-                </Route>
+                {/* ===== RUTAS DE PAGO ===== ✅ NUEVO */}
+                <Route
+                  path="/payment/success"
+                  element={<PaymentSuccessPage />}
+                />
+                <Route
+                  path="/payment/failure"
+                  element={<PaymentFailurePage />}
+                />
+                <Route
+                  path="/payment/pending"
+                  element={<PaymentPendingPage />}
+                />
+                <Route
+                  path="/payment/redirect"
+                  element={<PaymentRedirectPage />}
+                />
 
-                {/* Rutas protegidas para ADMIN y OPERADOR */}
-                <Route element={<ProtectedRoute allowedRoles={[UserRol.ADMIN, UserRol.OPERADOR]} />}>
-                  <Route path="/admin" element={<AdminPage />} />
-                </Route>
-
-                {/* Rutas protegidas para cualquier usuario autenticado */}
+                {/* ===== RUTAS PROTEGIDAS - USUARIO AUTENTICADO ===== */}
                 <Route element={<ProtectedRoute />}>
                   <Route path="/mis-pedidos" element={<MisPedidosPage />} />
-                  <Route path="/payment/success" element={<PaymentSuccessPage />} />
-                  <Route path="/payment/failure" element={<PaymentFailurePage />} />
-                  <Route path="/payment/pending" element={<PaymentPendingPage />} />
-                  <Route path="/payment/retry/:pedidoId" element={<PaymentRetryPage />} />
                 </Route>
+
+                {/* ===== RUTAS PROTEGIDAS - SOLO ADMIN ===== */}
+                <Route
+                  element={<ProtectedRoute allowedRoles={[UserRol.ADMIN]} />}
+                >
+                  {/* Dashboard principal de admin */}
+                  <Route path="/admin" element={<AdminPage />} />
+
+                  {/* Gestión de usuarios */}
+                  <Route
+                    path="/admin/usuarios"
+                    element={<GestionUsuariosPage />}
+                  />
+
+                  {/* Gestión de pedidos */}
+                  <Route
+                    path="/admin/pedidos"
+                    element={<GestionPedidosPage />}
+                  />
+
+                  {/* Gestión de instrumentos (productos) */}
+                  <Route path="/admin/instrumentos" element={<AdminPage />} />
+                </Route>
+
+                {/* ===== RUTA 404 (opcional) ===== */}
+                <Route
+                  path="*"
+                  element={
+                    <div className="not-found-page">
+                      <h1>404 - Página no encontrada</h1>
+                      <p>La página que buscas no existe.</p>
+                      <a href="/">Volver al inicio</a>
+                    </div>
+                  }
+                />
               </Routes>
             </main>
+
             <Footer />
-            {/* Componente del Carrito */}
+
+            {/* Carrito lateral (drawer) */}
             <CarritoDrawer />
           </div>
         </Router>

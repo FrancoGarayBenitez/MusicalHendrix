@@ -32,11 +32,13 @@ public class Usuario {
     @Column(name = "contrasena", nullable = false)
     private String contrasenia;
 
+    @Column(name = "activo", nullable = false)
+    private boolean activo = true;
+
     // Relación con Rol
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "id_rol", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "usuarios"})
-    private Rol rol;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "rol", nullable = false)
+    private Rol rol = Rol.USER;
 
     // Relación con Pedidos
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL)
@@ -50,6 +52,7 @@ public class Usuario {
         this.email = email;
         this.contrasenia = contrasenia;
         this.rol = rol;
+        this.activo = true; // Asegurar que los nuevos usuarios estén activos
     }
 
     @Override
@@ -59,7 +62,7 @@ public class Usuario {
                 ", nombre='" + nombre + '\'' +
                 ", apellido='" + apellido + '\'' +
                 ", email='" + email + '\'' +
-                ", rolId=" + (rol != null ? rol.getIdRol() : null) +
+                ", rol=" + (rol != null ? rol.name() : null) +
                 '}';
     }
 }

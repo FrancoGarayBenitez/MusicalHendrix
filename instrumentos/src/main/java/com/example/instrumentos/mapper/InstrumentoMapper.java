@@ -1,6 +1,7 @@
 package com.example.instrumentos.mapper;
 
 import com.example.instrumentos.dto.request.InstrumentoRequestDTO;
+import com.example.instrumentos.dto.response.CategoriaResponseDTO;
 import com.example.instrumentos.dto.response.InstrumentoResponseDTO;
 import com.example.instrumentos.model.CategoriaInstrumento;
 import com.example.instrumentos.model.Instrumento;
@@ -11,7 +12,6 @@ public class InstrumentoMapper {
 
     public Instrumento toEntity(InstrumentoRequestDTO dto) {
         Instrumento instrumento = new Instrumento();
-        instrumento.setCodigo(dto.getCodigo());
         instrumento.setDenominacion(dto.getDenominacion());
         instrumento.setMarca(dto.getMarca());
         instrumento.setStock(dto.getStock());
@@ -26,18 +26,24 @@ public class InstrumentoMapper {
         return instrumento;
     }
 
-    public InstrumentoResponseDTO toDTO(Instrumento instrumento) {
+    // Nuevo: recibe el precioActual calculado externamente (en el
+    // servicio/controlador)
+    public InstrumentoResponseDTO toDTO(Instrumento instrumento, Double precioActual) {
+        CategoriaResponseDTO categoriaDTO = null;
+        if (instrumento.getCategoriaInstrumento() != null) {
+            categoriaDTO = new CategoriaResponseDTO(
+                    instrumento.getCategoriaInstrumento().getIdCategoriaInstrumento(),
+                    instrumento.getCategoriaInstrumento().getDenominacion());
+        }
+
         return new InstrumentoResponseDTO(
                 instrumento.getIdInstrumento(),
-                instrumento.getCodigo(),
                 instrumento.getDenominacion(),
                 instrumento.getMarca(),
                 instrumento.getStock(),
                 instrumento.getDescripcion(),
                 instrumento.getImagen(),
-                instrumento.getPrecioActual(),
-                instrumento.getCategoriaInstrumento().getDenominacion(),
-                instrumento.getCategoriaInstrumento().getIdCategoriaInstrumento()
-        );
+                precioActual,
+                categoriaDTO);
     }
 }

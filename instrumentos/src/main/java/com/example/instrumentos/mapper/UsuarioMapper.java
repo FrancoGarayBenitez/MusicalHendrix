@@ -14,8 +14,8 @@ public class UsuarioMapper {
                 usuario.getNombre(),
                 usuario.getApellido(),
                 usuario.getEmail(),
-                usuario.getRol().getDefinicion()
-        );
+                usuario.getRol(),
+                usuario.isActivo());
     }
 
     public Usuario toEntity(RegistroRequestDTO dto) {

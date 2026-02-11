@@ -1,349 +1,327 @@
-import { useState, useEffect } from 'react';
-import { adminUserService } from '../service/adminUserService';
-import { UserRol } from '../types/auth';
-import Loading from '../components/common/Loading';
-import Error from '../components/common/Error';
-import './AuthPages.css';
-
-interface Usuario {
-    id?: number;
-    idUsuario?: number;
-    nombreUsuario?: string;
-    email?: string;
-    nombre?: string;
-    apellido?: string;
-    rol: string | {
-        idRol: number;
-        definicion: string;
-    };
-}
-
-const getErrorMessage = (error: any): string => {
-  if (error) {
-    if (typeof error === 'string') {
-      return error;
-    }
-    if (error.message) {
-      return error.message;
-    }
-  }
-  return 'Ocurrió un error desconocido';
-};
-
-//funcion para obtener el ID del usuario
-const getUserId = (usuario: Usuario): number => {
-    return usuario.id || usuario.idUsuario || 0;
-};
+import { useState, useEffect } from "react";
+import { Navigate } from "react-router-dom";
+import { adminUserService } from "../service/adminUserService";
+import { UserRol, Usuario } from "../types/auth";
+import { useAuth } from "../context/AuthContext";
+import Loading from "../components/common/Loading";
+import "./AdminStyles.css";
 
 const GestionUsuariosPage = () => {
-    const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<string | null>(null);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [updatingUserId, setUpdatingUserId] = useState<number | null>(null);
 
-    const [formData, setFormData] = useState({
-        nombre: '',
-        apellido: '',
-        email: '',
-        clave: '',
-        confirmarClave: ''
-    });
+  const { user, isAuthenticated, isAdmin } = useAuth();
 
-    const [formSubmitting, setFormSubmitting] = useState(false);
-    const [formError, setFormError] = useState<string | null>(null);
-    const [showForm, setShowForm] = useState(false);
+  // ✅ PROTECCIÓN: Solo admin puede acceder
+  if (!isAuthenticated) {
+    console.warn("⚠️ Usuario no autenticado. Redirigiendo a login...");
+    return <Navigate to="/login" replace />;
+  }
 
-    //carga de usuarios
-    useEffect(() => {
-        loadUsuarios();
-    }, []);
+  if (!isAdmin) {
+    console.warn("⚠️ Usuario sin permisos de admin. Redirigiendo a home...");
+    return <Navigate to="/" replace />;
+  }
 
-    //funcion para cargar usuarios
-    const loadUsuarios = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const data = await adminUserService.getAllUsers();
-            console.log('Usuarios recibidos del backend:', data); // DEBUG
-            console.log('Cantidad de usuarios:', data.length); // DEBUG
-            setUsuarios(data);
-        } catch (error: unknown) {
-            setError(getErrorMessage(error) || 'Error al cargar usuarios');
-        } finally {
-            setLoading(false);
-        }
-    };
+  if (!user?.activo) {
+    console.warn("⚠️ Usuario inactivo. Redirigiendo a login...");
+    return <Navigate to="/login" replace />;
+  }
 
-    //manejar cambios en el formulario
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-        if (formError) setFormError(null);
-    };
+  // ✅ Carga inicial de usuarios
+  useEffect(() => {
+    loadUsuarios();
+  }, []);
 
-    //manejar envio del formulario
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+  const loadUsuarios = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        if (!formData.nombre || !formData.apellido || !formData.email || !formData.clave || !formData.confirmarClave) {
-            setFormError('Por favor complete todos los campos');
-            return;
-        }
+      console.log("📥 Cargando usuarios del sistema...");
 
-        if (formData.clave !== formData.confirmarClave) {
-            setFormError('Las contraseñas no coinciden');
-            return;
-        }
+      const data = await adminUserService.getAllUsers();
 
-        if (formData.clave.length < 6) {
-            setFormError('La contraseña debe tener al menos 6 caracteres');
-            return;
-        }
+      console.log("✅ Usuarios cargados:", data.length);
+      setUsuarios(data);
+    } catch (err) {
+      console.error("❌ Error al cargar usuarios:", err);
+      setError("Error al cargar usuarios. Por favor, intenta nuevamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        //validar formato de email basico
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(formData.email)) {
-            setFormError('Por favor ingrese un email válido');
-            return;
-        }
+  // ✅ Manejar cambio de rol
+  const handleRoleChange = async (userId: number, newRole: UserRol) => {
+    if (userId === user?.id) {
+      alert("⚠️ No puedes cambiar tu propio rol");
+      return;
+    }
 
-        try {
-            setFormSubmitting(true);
-            setFormError(null);
+    const usuario = usuarios.find((u) => u.id === userId);
+    if (!usuario) {
+      console.error("❌ Usuario no encontrado:", userId);
+      return;
+    }
 
-            //registro de operador con la estructura correcta
-            await adminUserService.registerOperador({
-                nombre: formData.nombre,
-                apellido: formData.apellido,
-                email: formData.email,
-                clave: formData.clave,
-                rol: UserRol.OPERADOR
-            });
-
-            setFormData({
-                nombre: '',
-                apellido: '',
-                email: '',
-                clave: '',
-                confirmarClave: ''
-            });
-
-            setSuccess('Operador registrado exitosamente');
-            setShowForm(false);
-
-            //recarga lista de usuarios
-            loadUsuarios();
-
-            setTimeout(() => {
-                setSuccess(null);
-            }, 3000);
-
-        } catch (error: unknown) {
-            setFormError(getErrorMessage(error) || 'Error al registrar operador');
-        } finally {
-            setFormSubmitting(false);
-        }
-    };
-
-    //eliminar usuario
-    const handleDeleteUser = async (userId: number) => {
-        if (!confirm('¿Estás seguro de eliminar este usuario?')) return;
-
-        try {
-            setLoading(true);
-            await adminUserService.deleteUser(userId);
-
-            setUsuarios(prev => prev.filter(user => {
-                const currentUserId = getUserId(user);
-                return currentUserId !== userId;
-            }));
-
-            setSuccess('Usuario eliminado exitosamente');
-
-            setTimeout(() => {
-                setSuccess(null);
-            }, 3000);
-
-        } catch (error: unknown) {
-            setError(getErrorMessage(error) || 'Error al eliminar usuario');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    if (loading && usuarios.length === 0) return <Loading />;
-
-    return (
-        <div className="admin-page">
-            <div className="page-header">
-                <h1>Gestión de Usuarios</h1>
-                <p>Administración de usuarios y operadores del sistema</p>
-            </div>
-
-            {error && <Error message={error} />}
-
-            {success && (
-                <div className="auth-success" style={{ marginBottom: '20px' }}>
-                    {success}
-                </div>
-            )}
-
-            <div className="admin-actions" style={{ marginBottom: '20px' }}>
-                <button
-                    className="btn btn-primary"
-                    onClick={() => setShowForm(!showForm)}
-                >
-                    {showForm ? 'Cancelar' : 'Registrar Nuevo Operador'}
-                </button>
-            </div>
-
-            {showForm && (
-                <div className="auth-container" style={{ maxWidth: '600px', margin: '0 auto 30px' }}>
-                    <h2 className="auth-title">Registrar Nuevo Operador</h2>
-
-                    {formError && (
-                        <div className="auth-error">
-                            {formError}
-                        </div>
-                    )}
-
-                    <form className="auth-form" onSubmit={handleSubmit}>
-                        <div className="form-group">
-                            <label htmlFor="nombre">Nombre</label>
-                            <input
-                                type="text"
-                                id="nombre"
-                                name="nombre"
-                                value={formData.nombre}
-                                onChange={handleChange}
-                                disabled={formSubmitting}
-                                placeholder="Ingrese el nombre"
-                                maxLength={50}
-                            />
-                        </div>
-
-                        <div className="form-group">
-                            <label htmlFor="apellido">Apellido</label>
-                            <input
-                                type="text"
-                                id="apellido"
-                                name="apellido"
-                                value={formData.apellido}
-                                onChange={handleChange}
-                                disabled={formSubmitting}
-                                placeholder="Ingrese el apellido"
-                                maxLength={50}
-                            />
-                        </div>
-
-                        <div className="form-group">
-                            <label htmlFor="email">Email</label>
-                            <input
-                                type="email"
-                                id="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                disabled={formSubmitting}
-                                placeholder="Ingrese el email"
-                            />
-                        </div>
-
-                        <div className="form-group">
-                            <label htmlFor="clave">Contraseña</label>
-                            <input
-                                type="password"
-                                id="clave"
-                                name="clave"
-                                value={formData.clave}
-                                onChange={handleChange}
-                                disabled={formSubmitting}
-                                placeholder="Ingrese contraseña (mín. 6 caracteres)"
-                            />
-                        </div>
-
-                        <div className="form-group">
-                            <label htmlFor="confirmarClave">Confirmar Contraseña</label>
-                            <input
-                                type="password"
-                                id="confirmarClave"
-                                name="confirmarClave"
-                                value={formData.confirmarClave}
-                                onChange={handleChange}
-                                disabled={formSubmitting}
-                                placeholder="Confirme la contraseña"
-                            />
-                        </div>
-
-                        <button
-                            type="submit"
-                            className="auth-button"
-                            disabled={formSubmitting}
-                        >
-                            {formSubmitting ? 'Registrando...' : 'Registrar Operador'}
-                        </button>
-                    </form>
-                </div>
-            )}
-
-            <div className="users-list">
-                <h2>Usuarios del Sistema</h2>
-
-                {usuarios.length === 0 ? (
-                    <p>No hay usuarios registrados</p>
-                ) : (
-                    <div className="table-responsive">
-                        <table className="users-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Usuario</th>
-                                    <th>Rol</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {usuarios.length > 0 ? (
-                                    usuarios.map(usuario => {
-                                        console.log('Renderizando usuario:', usuario); // DEBUG
-                                        const userId = getUserId(usuario);
-                                        return (
-                                            <tr key={userId}>
-                                                <td>{userId}</td>
-                                                <td>{usuario.nombreUsuario || usuario.email || `${usuario.nombre} ${usuario.apellido}`}</td>
-                                                <td>
-                                                    <span className={`role-badge ${typeof usuario.rol === 'string' ? usuario.rol.toLowerCase() : usuario.rol.definicion?.toLowerCase() || 'visor'}`}>
-                                                        {typeof usuario.rol === 'string' ? usuario.rol : usuario.rol.definicion || 'Visor'}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    {/* Solo permitir eliminar si NO es Admin */}
-                                                    {(typeof usuario.rol === 'string' ? usuario.rol : usuario.rol.definicion) !== 'Admin' && (
-                                                        <button
-                                                            className="btn btn-danger btn-sm"
-                                                            onClick={() => handleDeleteUser(userId)}
-                                                        >
-                                                            Eliminar
-                                                        </button>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })
-                                ) : (
-                                    <tr>
-                                        <td colSpan={4} style={{ textAlign: 'center' }}>
-                                            No hay usuarios para mostrar
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
-        </div>
+    // Evita quitar el último ADMIN activo
+    const adminActivos = usuarios.filter(
+      (u) => u.rol === UserRol.ADMIN && u.activo,
     );
+    if (
+      usuario.rol === UserRol.ADMIN &&
+      newRole === UserRol.USER &&
+      adminActivos.length <= 1
+    ) {
+      alert("⚠️ No puedes quitar el rol ADMIN al último administrador activo.");
+      return;
+    }
+
+    const confirmacion = window.confirm(
+      `¿Estás seguro de cambiar el rol de "${usuario.nombre} ${usuario.apellido}" a ${newRole}?`,
+    );
+
+    if (!confirmacion) {
+      console.log("🚫 Cambio de rol cancelado por el usuario");
+      return;
+    }
+
+    try {
+      setUpdatingUserId(userId);
+      setError(null);
+
+      console.log(`🔄 Actualizando rol del usuario ${userId} → ${newRole}`);
+
+      const updatedUser = await adminUserService.updateUser(userId, {
+        rol: newRole,
+        activo: usuario.activo,
+      });
+
+      console.log("✅ Rol actualizado:", updatedUser);
+
+      setUsuarios((prev) =>
+        prev.map((u) => (u.id === userId ? updatedUser : u)),
+      );
+
+      setSuccess(`✅ Rol actualizado a ${newRole} correctamente`);
+
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      console.error("❌ Error al cambiar rol:", err);
+      setError("Error al cambiar el rol. Por favor, intenta nuevamente.");
+
+      setTimeout(() => setError(null), 5000);
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  // ✅ Manejar cambio de estado (activo/inactivo)
+  const handleStatusChange = async (userId: number, newStatus: boolean) => {
+    if (userId === user?.id) {
+      alert("⚠️ No puedes cambiar tu propio estado");
+      return;
+    }
+
+    const usuario = usuarios.find((u) => u.id === userId);
+    if (!usuario) {
+      console.error("❌ Usuario no encontrado:", userId);
+      return;
+    }
+
+    const accion = newStatus ? "habilitar" : "deshabilitar";
+    const confirmacion = window.confirm(
+      `¿Estás seguro de ${accion} a "${usuario.nombre} ${usuario.apellido}"?\n\n${!newStatus ? "⚠️ Este usuario no podrá acceder al sistema." : ""}`,
+    );
+
+    if (!confirmacion) {
+      console.log("🚫 Cambio de estado cancelado por el usuario");
+      return;
+    }
+
+    try {
+      setUpdatingUserId(userId);
+      setError(null);
+
+      console.log(
+        `🔄 Actualizando estado del usuario ${userId} → ${newStatus ? "Activo" : "Inactivo"}`,
+      );
+
+      const updatedUser = await adminUserService.updateUser(userId, {
+        rol: usuario.rol,
+        activo: newStatus,
+      });
+
+      console.log("✅ Estado actualizado:", updatedUser);
+
+      setUsuarios((prev) =>
+        prev.map((u) => (u.id === userId ? updatedUser : u)),
+      );
+
+      setSuccess(
+        `✅ Usuario ${newStatus ? "habilitado" : "deshabilitado"} exitosamente`,
+      );
+
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      console.error("❌ Error al cambiar estado:", err);
+      setError("Error al cambiar el estado. Por favor, intenta nuevamente.");
+
+      setTimeout(() => setError(null), 5000);
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  // ✅ Verificar si es el usuario actual
+  const isCurrentUser = (userId: number): boolean => {
+    return userId === user?.id;
+  };
+
+  if (loading && usuarios.length === 0) {
+    return <Loading message="Cargando usuarios..." />;
+  }
+
+  return (
+    <div className="admin-page">
+      {/* Header de la página */}
+      <div className="page-header">
+        <h1>👥 Gestión de Usuarios</h1>
+        <p>Administración de usuarios y roles del sistema</p>
+        <div className="admin-info">
+          <span className="admin-user">
+            👤 {user.email} <span className="role-badge admin">ADMIN</span>
+          </span>
+        </div>
+      </div>
+
+      {/* Mensajes de feedback */}
+      {error && (
+        <div className="alert alert-error" role="alert">
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="alert alert-success" role="alert">
+          {success}
+        </div>
+      )}
+
+      {/* Lista de usuarios */}
+      <div className="users-section">
+        <div className="section-header">
+          <h2>Usuarios del Sistema ({usuarios.length})</h2>
+          <button
+            onClick={loadUsuarios}
+            className="btn-refresh"
+            disabled={loading}
+          >
+            🔄 Actualizar
+          </button>
+        </div>
+
+        {usuarios.length === 0 ? (
+          <div className="no-data">
+            <p>📭 No hay usuarios registrados en el sistema.</p>
+          </div>
+        ) : (
+          <div className="table-responsive">
+            <table className="users-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre Completo</th>
+                  <th>Email</th>
+                  <th>Rol</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usuarios.map((usuario) => {
+                  const isCurrent = isCurrentUser(usuario.id);
+                  const isUpdating = updatingUserId === usuario.id;
+
+                  return (
+                    <tr
+                      key={usuario.id}
+                      className={`${!usuario.activo ? "inactive-row" : ""} ${isCurrent ? "current-user-row" : ""}`}
+                    >
+                      <td>{usuario.id}</td>
+                      <td className="user-name-cell">
+                        {`${usuario.nombre} ${usuario.apellido}`}
+                        {isCurrent && (
+                          <span className="current-user-badge">TÚ</span>
+                        )}
+                      </td>
+                      <td>{usuario.email}</td>
+                      <td>
+                        {isCurrent ? (
+                          <span
+                            className={`role-badge ${usuario.rol.toLowerCase()}`}
+                          >
+                            {usuario.rol}
+                          </span>
+                        ) : (
+                          <select
+                            value={usuario.rol}
+                            onChange={(e) =>
+                              handleRoleChange(
+                                usuario.id,
+                                e.target.value as UserRol,
+                              )
+                            }
+                            className="role-select"
+                            disabled={isUpdating}
+                          >
+                            <option value={UserRol.USER}>USER</option>
+                            <option value={UserRol.ADMIN}>ADMIN</option>
+                          </select>
+                        )}
+                      </td>
+                      <td>
+                        <span
+                          className={`status-badge ${usuario.activo ? "active" : "inactive"}`}
+                        >
+                          {usuario.activo ? "✅ Activo" : "❌ Inactivo"}
+                        </span>
+                      </td>
+                      <td>
+                        {isCurrent ? (
+                          <span className="no-action">
+                            No puedes modificar tu propio usuario
+                          </span>
+                        ) : (
+                          <button
+                            className={`btn btn-sm ${usuario.activo ? "btn-warning" : "btn-success"}`}
+                            onClick={() =>
+                              handleStatusChange(usuario.id, !usuario.activo)
+                            }
+                            disabled={isUpdating}
+                          >
+                            {isUpdating
+                              ? "⏳ Actualizando..."
+                              : usuario.activo
+                                ? "🚫 Deshabilitar"
+                                : "✅ Habilitar"}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default GestionUsuariosPage;

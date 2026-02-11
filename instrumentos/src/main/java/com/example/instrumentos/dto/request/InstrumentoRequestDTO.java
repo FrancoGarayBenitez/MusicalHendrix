@@ -9,9 +9,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class InstrumentoRequestDTO {
-    @NotBlank(message = "El código es obligatorio")
-    @Size(max = 50, message = "El código no puede exceder 50 caracteres")
-    private String codigo;
 
     @NotBlank(message = "La denominación es obligatoria")
     @Size(max = 100, message = "La denominación no puede exceder 100 caracteres")
@@ -32,7 +29,7 @@ public class InstrumentoRequestDTO {
 
     @NotNull(message = "El precio es obligatorio")
     @DecimalMin(value = "0.0", inclusive = false, message = "El precio debe ser mayor a 0")
-    private Double precio;
+    private Double precioActual;
 
     @NotNull(message = "La categoría es obligatoria")
     private Long categoriaId;

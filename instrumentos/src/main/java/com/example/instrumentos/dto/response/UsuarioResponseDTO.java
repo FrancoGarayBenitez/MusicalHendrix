@@ -1,5 +1,7 @@
 package com.example.instrumentos.dto.response;
 
+import com.example.instrumentos.model.Rol;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,6 +14,6 @@ public class UsuarioResponseDTO {
     private String nombre;
     private String apellido;
     private String email;
-    private String rol;
-    //no incluye la contraseña por seguridad
+    private Rol rol;
+    private boolean activo;
 }

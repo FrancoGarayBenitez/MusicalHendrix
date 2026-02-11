@@ -1,50 +1,43 @@
 //modelo Categoria
 export interface Categoria {
-    idCategoriaInstrumento: number;
-    denominacion: string;
+  idCategoriaInstrumento: number;
+  denominacion: string;
 }
 
 //modelo Instrumento
 export interface Instrumento {
-    idInstrumento?: number;          
-    codigo: string;                  
-    denominacion: string;            
-    marca: string;
-    stock: number;                   
-    descripcion: string;
-    imagen: string;
-    precioActual?: number;           
-    categoriaInstrumento: {          
-        idCategoriaInstrumento: number;
-        denominacion: string;
-    };
+  idInstrumento?: number;
+  denominacion: string;
+  marca: string;
+  stock: number;
+  descripcion: string;
+  imagen: string;
+  precioActual?: number;
+  categoriaInstrumento: Categoria;
 }
 
 //estado para formularios
 export interface FormState {
-    isSubmitting: boolean;
-    isSuccess: boolean;
-    isError: boolean;
-    message: string;
-}
-
-//usuario simplificado
-export interface Usuario {
-    idUsuario: number;
-    nombre: string;
-    apellido: string;
-    email: string;
-    rol: {
-        idRol: number;
-        definicion: string; // "Admin", "Operador", "Visor"
-    };
+  isSubmitting: boolean;
+  isSuccess: boolean;
+  isError: boolean;
+  message: string;
 }
 
 //imagenes del slider
 export interface SliderImage {
-    id: number;
-    url: string;
-    alt: string;
-    caption?: string;
-    description?: string;
+  id: number;
+  url: string;
+  alt: string;
+  caption?: string;
+  description?: string;
+}
+
+export interface HistorialPrecioResponseDTO {
+  id: number;
+  instrumentoId: number;
+  instrumentoDenominacion: string;
+  precio: number;
+  fechaVigencia: Date | string;
+  vigente: boolean;
 }

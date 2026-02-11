@@ -1,7 +1,9 @@
 package com.example.instrumentos.service;
 
+import com.example.instrumentos.dto.request.InstrumentoRequestDTO;
+import com.example.instrumentos.mapper.InstrumentoMapper;
 import com.example.instrumentos.model.CategoriaInstrumento;
-import com.example.instrumentos.model.HistorialPrecioInstrumento;
+import com.example.instrumentos.model.HistorialPrecio;
 import com.example.instrumentos.model.Instrumento;
 import com.example.instrumentos.repository.CategoriaInstrumentoRepository;
 import com.example.instrumentos.repository.HistorialPrecioRepository;
@@ -23,6 +25,7 @@ public class InstrumentoService {
     private final InstrumentoRepository instrumentoRepository;
     private final CategoriaInstrumentoRepository categoriaRepository;
     private final HistorialPrecioRepository historialPrecioRepository;
+    private final InstrumentoMapper instrumentoMapper;
 
     public List<Instrumento> findAll() {
         return instrumentoRepository.findAll();
@@ -37,39 +40,68 @@ public class InstrumentoService {
     }
 
     public Instrumento save(Instrumento instrumento) {
-        log.info("Guardando instrumento: {}", instrumento);
+        return instrumentoRepository.save(instrumento);
+    }
 
-        // Verificar que la categoría existe
-        if (instrumento.getCategoriaInstrumento() != null &&
-                instrumento.getCategoriaInstrumento().getIdCategoriaInstrumento() != null) {
+    public Instrumento save(InstrumentoRequestDTO instrumentoRequestDTO) {
+        log.info("Guardando instrumento desde DTO: {}", instrumentoRequestDTO.getDenominacion());
 
-            CategoriaInstrumento categoria = categoriaRepository
-                    .findById(instrumento.getCategoriaInstrumento().getIdCategoriaInstrumento())
-                    .orElseThrow(() -> new IllegalArgumentException("Categoría no encontrada"));
+        // Mapear DTO a entidad
+        Instrumento instrumento = instrumentoMapper.toEntity(instrumentoRequestDTO);
 
-            instrumento.setCategoriaInstrumento(categoria);
-        }
+        // Buscar y asignar la categoría completa
+        CategoriaInstrumento categoria = categoriaRepository.findById(instrumentoRequestDTO.getCategoriaId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Categoría no encontrada con ID: " + instrumentoRequestDTO.getCategoriaId()));
+        instrumento.setCategoriaInstrumento(categoria);
 
-        // Si es un nuevo instrumento, verificar que el código no exista
-        if (instrumento.getIdInstrumento() == null) {
-            if (instrumentoRepository.existsByCodigo(instrumento.getCodigo())) {
-                throw new IllegalArgumentException("Ya existe un instrumento con ese código");
-            }
-        }
-
-        // Guardar el instrumento
+        // Guardar el instrumento para obtener su ID
         Instrumento savedInstrumento = instrumentoRepository.save(instrumento);
 
-        // Si se proporciona un precio y es un nuevo instrumento, crear historial de precio
-        if (instrumento.getIdInstrumento() == null && instrumento.getPrecioActual() != null) {
-            HistorialPrecioInstrumento historialPrecio = new HistorialPrecioInstrumento(
-                    savedInstrumento,
-                    instrumento.getPrecioActual()
-            );
-            historialPrecioRepository.save(historialPrecio);
-        }
+        // Crear y guardar el historial de precio usando el precio del DTO
+        log.info("Creando historial para el precio: {}", instrumentoRequestDTO.getPrecioActual());
+        HistorialPrecio historial = new HistorialPrecio(savedInstrumento,
+                instrumentoRequestDTO.getPrecioActual());
+        historialPrecioRepository.save(historial);
 
         return savedInstrumento;
+    }
+
+    public Instrumento update(Long id, InstrumentoRequestDTO dto) {
+        log.info("Actualizando instrumento {}", id);
+
+        // 1. Buscar el instrumento existente
+        Instrumento instrumento = instrumentoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Instrumento no encontrado con ID: " + id));
+
+        // 2. Obtener precio actual antes de actualizar
+        Double precioActualAnterior = obtenerPrecioActual(instrumento);
+
+        // 3. Actualizar los campos desde el DTO
+        instrumento.setDenominacion(dto.getDenominacion());
+        instrumento.setMarca(dto.getMarca());
+        instrumento.setStock(dto.getStock());
+        instrumento.setDescripcion(dto.getDescripcion());
+        instrumento.setImagen(dto.getImagen());
+
+        // 4. Actualizar la categoría
+        CategoriaInstrumento categoria = categoriaRepository.findById(dto.getCategoriaId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Categoría no encontrada con ID: " + dto.getCategoriaId()));
+        instrumento.setCategoriaInstrumento(categoria);
+
+        // 5. Guardar la entidad actualizada
+        instrumentoRepository.save(instrumento);
+
+        // 6. Manejar la actualización del precio (si cambió)
+        if (dto.getPrecioActual() != null &&
+                Math.abs(precioActualAnterior - dto.getPrecioActual()) > 0.01) {
+            log.info("Precio cambió de {} a {}", precioActualAnterior, dto.getPrecioActual());
+            actualizarPrecio(id, dto.getPrecioActual());
+        }
+
+        // 7. Devolver la entidad actualizada y con el historial cargado
+        return findById(id).orElseThrow();
     }
 
     public void deleteById(Long id) {
@@ -83,49 +115,120 @@ public class InstrumentoService {
         }
 
         instrumentoRepository.deleteById(id);
+        log.info("Instrumento {} eliminado", id);
     }
 
-    // Actualizar el precio de un instrumento (crea nuevo registro en historial)
-    public Instrumento actualizarPrecio(Long idInstrumento, Double nuevoPrecio) {
-        log.info("Actualizando precio del instrumento {} a {}", idInstrumento, nuevoPrecio);
+    /**
+     * Obtener el precio actual de un instrumento desde el historial
+     */
+    public Double obtenerPrecioActual(Long instrumentoId) {
+        Instrumento instrumento = instrumentoRepository.findById(instrumentoId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Instrumento no encontrado con ID: " + instrumentoId));
 
-        Instrumento instrumento = instrumentoRepository.findById(idInstrumento)
-                .orElseThrow(() -> new IllegalArgumentException("Instrumento no encontrado"));
-
-        // Crear nuevo registro en el historial de precios
-        HistorialPrecioInstrumento nuevoHistorial = new HistorialPrecioInstrumento(instrumento, nuevoPrecio);
-        historialPrecioRepository.save(nuevoHistorial);
-
-        log.info("Precio actualizado correctamente");
-        return instrumento;
+        return obtenerPrecioActual(instrumento);
     }
 
-    // Actualizar stock después de una venta
-    public Instrumento actualizarStock(Long idInstrumento, Integer cantidadVendida) {
-        log.info("Actualizando stock del instrumento {} - Cantidad vendida: {}", idInstrumento, cantidadVendida);
+    /**
+     * Obtener el precio actual de un instrumento (sobrecarga)
+     */
+    public Double obtenerPrecioActual(Instrumento instrumento) {
+        HistorialPrecio historialActual = historialPrecioRepository
+                .findFirstByInstrumentoOrderByFechaVigenciaDesc(instrumento)
+                .orElse(null);
 
-        Instrumento instrumento = instrumentoRepository.findById(idInstrumento)
-                .orElseThrow(() -> new IllegalArgumentException("Instrumento no encontrado"));
-
-        Integer stockActual = instrumento.getStock();
-        if (stockActual < cantidadVendida) {
-            throw new IllegalArgumentException("Stock insuficiente. Stock actual: " + stockActual);
+        if (historialActual != null) {
+            return historialActual.getPrecio();
         }
 
-        instrumento.setStock(stockActual - cantidadVendida);
-
-        return instrumentoRepository.save(instrumento);
+        throw new IllegalStateException(
+                "No se encontró precio para el instrumento: " + instrumento.getDenominacion() +
+                        " (ID: " + instrumento.getIdInstrumento() + ")");
     }
 
-    // Reponer stock
-    public Instrumento reponerStock(Long idInstrumento, Integer cantidadReponer) {
-        log.info("Reponiendo stock del instrumento {} - Cantidad: {}", idInstrumento, cantidadReponer);
+    /**
+     * Actualizar el precio de un instrumento (crea nuevo registro en historial)
+     */
+    public HistorialPrecio actualizarPrecio(Long idInstrumento, Double nuevoPrecio) {
+        log.info("💰 Actualizando precio del instrumento {} a ${}", idInstrumento, nuevoPrecio);
 
         Instrumento instrumento = instrumentoRepository.findById(idInstrumento)
-                .orElseThrow(() -> new IllegalArgumentException("Instrumento no encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Instrumento no encontrado con ID: " + idInstrumento));
 
-        instrumento.setStock(instrumento.getStock() + cantidadReponer);
+        // Verificar si el precio realmente cambió
+        try {
+            Double precioActual = obtenerPrecioActual(instrumento);
+            if (Math.abs(precioActual - nuevoPrecio) < 0.01) {
+                log.info("⚠️ El precio no cambió, no se crea historial");
+                return historialPrecioRepository
+                        .findFirstByInstrumentoOrderByFechaVigenciaDesc(instrumento)
+                        .orElse(null);
+            }
+            log.info("Precio anterior: ${} → Nuevo precio: ${}", precioActual, nuevoPrecio);
+        } catch (IllegalStateException e) {
+            log.info("📝 Primer precio del instrumento");
+        }
 
-        return instrumentoRepository.save(instrumento);
+        // Crear nuevo registro en el historial de precios
+        HistorialPrecio nuevoHistorial = new HistorialPrecio(instrumento, nuevoPrecio);
+        nuevoHistorial = historialPrecioRepository.save(nuevoHistorial);
+
+        log.info("✅ Precio actualizado. Historial ID: {}", nuevoHistorial.getIdHistorial());
+        return nuevoHistorial;
+    }
+
+    /**
+     * Actualizar stock (descontar) después de una venta
+     */
+    public void actualizarStock(Long idInstrumento, Integer cantidadVendida) {
+        log.info("📦 Descontando {} unidades del instrumento {}", cantidadVendida, idInstrumento);
+
+        Instrumento instrumento = instrumentoRepository.findById(idInstrumento)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Instrumento no encontrado con ID: " + idInstrumento));
+
+        // Usar el método helper de la entidad
+        instrumento.descontarStock(cantidadVendida);
+        instrumentoRepository.save(instrumento);
+
+        log.info("✅ Stock actualizado: {} unidades restantes", instrumento.getStock());
+    }
+
+    /**
+     * Reponer stock (para cancelaciones)
+     */
+    public void reponerStock(Long idInstrumento, Integer cantidadReponer) {
+        log.info("📦 Reponiendo {} unidades del instrumento {}", cantidadReponer, idInstrumento);
+
+        Instrumento instrumento = instrumentoRepository.findById(idInstrumento)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Instrumento no encontrado con ID: " + idInstrumento));
+
+        // Usar el método helper de la entidad
+        instrumento.reponerStock(cantidadReponer);
+        instrumentoRepository.save(instrumento);
+
+        log.info("✅ Stock repuesto: {} unidades disponibles", instrumento.getStock());
+    }
+
+    /**
+     * Verificar disponibilidad de stock
+     */
+    public boolean verificarStock(Long idInstrumento, Integer cantidad) {
+        Instrumento instrumento = instrumentoRepository.findById(idInstrumento)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Instrumento no encontrado con ID: " + idInstrumento));
+
+        return instrumento.tieneStockDisponible(cantidad);
+    }
+
+    /**
+     * Obtener instrumentos con bajo stock (menos de 5 unidades)
+     */
+    public List<Instrumento> findInstrumentosConBajoStock() {
+        return instrumentoRepository.findAll().stream()
+                .filter(i -> i.getStock() < 5)
+                .toList();
     }
 }

@@ -11,63 +11,49 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Date;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class DataInitializer implements CommandLineRunner {
+public class DataInitializer implements org.springframework.boot.CommandLineRunner {
 
-    private final RolRepository rolRepository;
     private final UsuarioRepository usuarioRepository;
     private final CategoriaInstrumentoRepository categoriaRepository;
     private final InstrumentoRepository instrumentoRepository;
     private final HistorialPrecioRepository historialPrecioRepository;
     private final ResourceLoader resourceLoader;
     private final ObjectMapper objectMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        //inicializa roles
-        inicializarRoles();
-
-        //inicializa usuario admin
+        // inicializa usuario admin
         inicializarUsuarioAdmin();
 
-        //inicializa categorias
+        // inicializa categorias
         inicializarCategorias();
 
-        //carga los instrumentos desde JSON
+        // carga los instrumentos desde JSON
         loadInstrumentosFromJson();
-    }
-
-    private void inicializarRoles() {
-        if (rolRepository.count() == 0) {
-            log.info("Inicializando roles...");
-            rolRepository.save(new Rol("Admin"));
-            rolRepository.save(new Rol("Operador"));
-            rolRepository.save(new Rol("Visor"));
-            log.info("Roles creados exitosamente");
-        }
     }
 
     private void inicializarUsuarioAdmin() {
         if (usuarioRepository.count() == 0) {
             log.info("Creando usuario administrador...");
-            Rol rolAdmin = rolRepository.findByDefinicion("Admin")
-                    .orElseThrow(() -> new RuntimeException("Rol Admin no encontrado"));
 
             Usuario admin = new Usuario();
             admin.setNombre("Administrador");
             admin.setApellido("Sistema");
             admin.setEmail("admin@instrumentos.com");
-            //contraseña: admin123 encriptada con MD5
-            admin.setContrasenia("0192023a7bbd73250516f069df18b500");
-            admin.setRol(rolAdmin);
+            // contraseña: admin123 encriptada con BCrypt
+            admin.setContrasenia(passwordEncoder.encode("admin123"));
+            admin.setRol(Rol.ADMIN); // Usar el enum directamente
+            admin.setActivo(true);
 
             usuarioRepository.save(admin);
             log.info("Usuario administrador creado exitosamente - Email: admin@instrumentos.com");
@@ -110,32 +96,42 @@ public class DataInitializer implements CommandLineRunner {
                     int count = 0;
 
                     for (JsonNode instrumentoNode : instrumentosNode) {
-                        Instrumento instrumento = new Instrumento();
+                        try {
+                            Instrumento instrumento = new Instrumento();
 
-                        // Generar código único basado en el ID del JSON
-                        String jsonId = instrumentoNode.has("id") ? instrumentoNode.get("id").asText() : String.valueOf(count + 1);
-                        instrumento.setCodigo("INST-" + jsonId);
+                            String denominacion = instrumentoNode.get("denominacion").asText();
+                            instrumento.setDenominacion(denominacion);
+                            instrumento.setMarca(instrumentoNode.get("marca").asText());
+                            instrumento.setStock(instrumentoNode.get("stock").asInt());
+                            instrumento.setDescripcion(instrumentoNode.get("descripcion").asText());
+                            instrumento.setImagen(instrumentoNode.get("imagen").asText());
 
-                        // Mapear denominación desde el campo "instrumento" del JSON
-                        instrumento.setDenominacion(instrumentoNode.get("instrumento").asText());
-                        instrumento.setMarca(instrumentoNode.get("marca").asText());
-                        instrumento.setStock(instrumentoNode.get("cantidadVendida").asInt()); // Usar cantidadVendida como stock inicial
-                        instrumento.setDescripcion(instrumentoNode.get("descripcion").asText());
-                        instrumento.setImagen(instrumentoNode.get("imagen").asText());
+                            // Asignar categoría
+                            CategoriaInstrumento categoria = determinarCategoria(denominacion);
+                            if (categoria == null) {
+                                log.warn("No se pudo determinar la categoría para el instrumento: {}", denominacion);
+                                continue;
+                            }
+                            instrumento.setCategoriaInstrumento(categoria);
 
-                        // Asignar categoría
-                        CategoriaInstrumento categoria = determinarCategoria(instrumento.getDenominacion());
-                        instrumento.setCategoriaInstrumento(categoria);
+                            log.info("Instrumento: '{}' | Categoría asignada: '{}'", denominacion,
+                                    categoria.getDenominacion());
 
-                        // Guardar instrumento
-                        instrumento = instrumentoRepository.save(instrumento);
+                            // Guardar instrumento
+                            instrumento = instrumentoRepository.save(instrumento);
 
-                        // Crear historial de precio
-                        Double precio = Double.parseDouble(instrumentoNode.get("precio").asText());
-                        HistorialPrecioInstrumento historialPrecio = new HistorialPrecioInstrumento(instrumento, precio);
-                        historialPrecioRepository.save(historialPrecio);
+                            // Obtener el precio del JSON
+                            Double precioActual = instrumentoNode.get("precioActual").asDouble();
+                            // Crear historial de precio
+                            HistorialPrecio historialPrecio = new HistorialPrecio(instrumento,
+                                    precioActual);
+                            historialPrecioRepository.save(historialPrecio);
 
-                        count++;
+                            count++;
+                        } catch (Exception ex) {
+                            log.error("Error al cargar instrumento: {} | Detalle: {}", instrumentoNode.toString(),
+                                    ex.getMessage());
+                        }
                     }
 
                     log.info("Se han cargado {} instrumentos desde el archivo JSON", count);

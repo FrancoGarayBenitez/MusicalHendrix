@@ -1,5 +1,7 @@
 package com.example.instrumentos.dto.request;
 
+import com.example.instrumentos.model.Rol;
+
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -25,6 +27,5 @@ public class RegistroRequestDTO {
     @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
     private String clave;
 
-    @Pattern(regexp = "Admin|Operador|Visor", message = "El rol debe ser Admin, Operador o Visor")
-    private String rol = "Visor"; // Valor por defecto
+    private Rol rol = Rol.USER;
 }
