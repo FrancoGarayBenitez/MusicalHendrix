@@ -2,7 +2,6 @@ import { useState, FormEvent } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { authService } from "../service/authService";
-import "./AuthPages.css";
 
 const ForgotPasswordPage = () => {
   const { isAuthenticated } = useAuth();

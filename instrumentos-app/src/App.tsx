@@ -26,7 +26,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 // ===== USER PAGES (Authenticated) =====
 import MisPedidosPage from "./pages/MisPedidosPage";
 
-// ===== PAYMENT PAGES ===== ✅ NUEVO
+// ===== PAYMENT PAGES =====
 import PaymentSuccessPage from "./pages/payment/PaymentSuccessPage";
 import PaymentFailurePage from "./pages/payment/PaymentFailurePage";
 import PaymentPendingPage from "./pages/payment/PaymentPendingPage";
@@ -41,8 +41,6 @@ import GestionPedidosPage from "./pages/GestionPedidosPage";
 import { UserRol } from "./types/auth";
 
 // ===== STYLES =====
-import "./App.css";
-import "./components/carrito/Carrito.css";
 import "./pages/AdminStyles.css";
 
 function App() {
@@ -50,10 +48,10 @@ function App() {
     <AuthProvider>
       <CarritoProvider>
         <Router>
-          <div className="app">
+          <div className="min-h-screen flex flex-col bg-slate-50">
             <Navbar />
 
-            <main className="main-content">
+            <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
               <Routes>
                 {/* ===== RUTAS PÚBLICAS ===== */}
                 <Route path="/" element={<HomePage />} />
@@ -68,7 +66,7 @@ function App() {
                   element={<AccesoDenegadoPage />}
                 />
 
-                {/* ===== RUTAS DE AUTENTICACIÓN (públicas) ===== */}
+                {/* ===== RUTAS DE AUTENTICACIÓN ===== */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/registro" element={<RegistroPage />} />
                 <Route
@@ -77,7 +75,7 @@ function App() {
                 />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-                {/* ===== RUTAS DE PAGO ===== ✅ NUEVO */}
+                {/* ===== RUTAS DE PAGO ===== */}
                 <Route
                   path="/payment/success"
                   element={<PaymentSuccessPage />}
@@ -104,33 +102,35 @@ function App() {
                 <Route
                   element={<ProtectedRoute allowedRoles={[UserRol.ADMIN]} />}
                 >
-                  {/* Dashboard principal de admin */}
                   <Route path="/admin" element={<AdminPage />} />
-
-                  {/* Gestión de usuarios */}
                   <Route
                     path="/admin/usuarios"
                     element={<GestionUsuariosPage />}
                   />
-
-                  {/* Gestión de pedidos */}
                   <Route
                     path="/admin/pedidos"
                     element={<GestionPedidosPage />}
                   />
-
-                  {/* Gestión de instrumentos (productos) */}
                   <Route path="/admin/instrumentos" element={<AdminPage />} />
                 </Route>
 
-                {/* ===== RUTA 404 (opcional) ===== */}
+                {/* ===== RUTA 404 ===== */}
                 <Route
                   path="*"
                   element={
-                    <div className="not-found-page">
-                      <h1>404 - Página no encontrada</h1>
-                      <p>La página que buscas no existe.</p>
-                      <a href="/">Volver al inicio</a>
+                    <div className="text-center py-16">
+                      <h1 className="text-4xl font-bold text-slate-800 mb-4">
+                        404 - Página no encontrada
+                      </h1>
+                      <p className="text-slate-600 mb-6">
+                        La página que buscas no existe.
+                      </p>
+                      <a
+                        href="/"
+                        className="inline-block bg-musical-teal text-white px-6 py-3 rounded-lg hover:bg-musical-slate transition-colors"
+                      >
+                        Volver al inicio
+                      </a>
                     </div>
                   }
                 />
@@ -138,8 +138,6 @@ function App() {
             </main>
 
             <Footer />
-
-            {/* Carrito lateral (drawer) */}
             <CarritoDrawer />
           </div>
         </Router>

@@ -36,15 +36,13 @@ const InstrumentoCard: React.FC<InstrumentoCardProps> = ({ instrumento }) => {
   // ✅ Calcular estado del stock
   const sinStock = instrumento.stock === 0;
   const bajoStock = instrumento.stock > 0 && instrumento.stock < 5;
-  const stockDisponible = instrumento.stock >= 5;
 
   return (
     <div
-      className={`instrumento-card ${sinStock ? "sin-stock-card" : ""}`}
-      data-instrumento-id={instrumentoId}
+      className={`bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${sinStock ? "opacity-75" : ""}`}
     >
       {/* Imagen del instrumento */}
-      <div className="instrumento-img">
+      <div className="relative aspect-square overflow-hidden">
         <Link to={`/instrumento/${instrumentoId}`}>
           <img
             src={getImageUrl(instrumento.imagen)}
@@ -54,92 +52,114 @@ const InstrumentoCard: React.FC<InstrumentoCardProps> = ({ instrumento }) => {
               e.currentTarget.src = "/images/placeholder.jpg";
             }}
             loading="lazy"
+            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
           />
         </Link>
 
-        {/* Badge de stock */}
+        {/* Badges de stock */}
         {sinStock && (
-          <span className="stock-badge sin-stock-badge">Sin Stock</span>
+          <span className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+            Sin Stock
+          </span>
         )}
         {bajoStock && (
-          <span className="stock-badge bajo-stock-badge">
-            Últimas {instrumento.stock} unidades
+          <span className="absolute top-3 right-3 bg-musical-warning text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+            Últimas {instrumento.stock}
           </span>
         )}
       </div>
 
       {/* Información del instrumento */}
-      <div className="instrumento-info">
-        <Link
-          to={`/instrumento/${instrumentoId}`}
-          className="title-link"
-          title={instrumento.denominacion}
-        >
-          <h2 className="instrumento-title">{instrumento.denominacion}</h2>
-        </Link>
-
-        {/* Marca */}
-        <p className="instrumento-marca">
-          <span className="label">Marca:</span> {instrumento.marca}
-        </p>
-
-        {/* Categoría */}
-        <p className="instrumento-categoria">
-          <span className="label">Categoría:</span>{" "}
-          {instrumento.categoriaInstrumento?.denominacion || "Sin categoría"}
-        </p>
-
-        {/* Precio - ✅ Mostrar solo si está disponible y es mayor a 0 */}
-        {instrumento.precioActual && instrumento.precioActual > 0 ? (
-          <p className="instrumento-precio">
-            $
-            {instrumento.precioActual.toLocaleString("es-AR", {
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 2,
-            })}
-          </p>
-        ) : (
-          <p className="instrumento-precio no-precio">Precio no disponible</p>
-        )}
-
-        {/* Stock disponible */}
-        <p className="stock-info">
-          {sinStock ? (
-            <span className="sin-stock">❌ Sin stock</span>
-          ) : bajoStock ? (
-            <span className="bajo-stock">
-              ⚠️ Stock bajo: {instrumento.stock}{" "}
-              {instrumento.stock === 1 ? "unidad" : "unidades"}
-            </span>
-          ) : (
-            <span className="stock-disponible">
-              ✅ Stock disponible: {instrumento.stock}
-            </span>
-          )}
-        </p>
-
-        {/* Acciones */}
-        <div className="card-actions">
+      <div className="p-6 space-y-4">
+        {/* Título */}
+        <div>
           <Link
             to={`/instrumento/${instrumentoId}`}
-            className="detalle-btn"
+            className="block group"
+            title={instrumento.denominacion}
+          >
+            <h2 className="text-lg font-bold text-musical-slate group-hover:text-musical-teal transition-colors duration-200 line-clamp-2 leading-tight">
+              {instrumento.denominacion}
+            </h2>
+          </Link>
+        </div>
+
+        {/* Marca y Categoría */}
+        <div className="space-y-2 text-sm">
+          <p className="flex items-center text-slate-600">
+            <span className="w-16 font-medium text-musical-slate">Marca:</span>
+            <span className="font-semibold">{instrumento.marca}</span>
+          </p>
+          <p className="flex items-center text-slate-600">
+            <span className="w-16 font-medium text-musical-slate">Tipo:</span>
+            <span className="font-semibold">
+              {instrumento.categoriaInstrumento?.denominacion ||
+                "Sin categoría"}
+            </span>
+          </p>
+        </div>
+
+        {/* Precio */}
+        <div className="pt-2">
+          {instrumento.precioActual && instrumento.precioActual > 0 ? (
+            <p className="text-2xl font-bold text-musical-teal">
+              $
+              {instrumento.precioActual.toLocaleString("es-AR", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              })}
+            </p>
+          ) : (
+            <p className="text-xl font-bold text-slate-400">
+              Precio no disponible
+            </p>
+          )}
+        </div>
+
+        {/* Stock info */}
+        <div className="pt-2">
+          {sinStock ? (
+            <div className="flex items-center text-red-500 text-sm font-medium">
+              <span className="mr-2">❌</span>
+              Sin stock
+            </div>
+          ) : bajoStock ? (
+            <div className="flex items-center text-musical-warning text-sm font-medium">
+              <span className="mr-2">⚠️</span>
+              Stock bajo: {instrumento.stock}{" "}
+              {instrumento.stock === 1 ? "unidad" : "unidades"}
+            </div>
+          ) : (
+            <div className="flex items-center text-musical-success text-sm font-medium">
+              <span className="mr-2">✅</span>
+              Stock disponible: {instrumento.stock}
+            </div>
+          )}
+        </div>
+
+        {/* Acciones */}
+        <div className="pt-4 space-y-3">
+          {/* Ver detalle */}
+          <Link
+            to={`/instrumento/${instrumentoId}`}
+            className="block w-full bg-slate-100 text-musical-slate font-semibold text-center py-3 px-4 rounded-lg border-2 border-slate-200 hover:border-musical-slate hover:bg-slate-50 transition-all duration-200"
             title={`Ver detalles de ${instrumento.denominacion}`}
           >
-            Ver Detalle
+            👁️ Ver Detalle
           </Link>
 
-          {/* Botón para agregar al carrito - solo si hay stock */}
-          {!sinStock && (
+          {/* Botón agregar al carrito o mensaje sin stock */}
+          {!sinStock ? (
             <BotonAgregarCarrito
               instrumento={instrumento}
               showQuantity={false}
             />
-          )}
-
-          {/* Mensaje si no hay stock */}
-          {sinStock && (
-            <button className="agregar-carrito-btn disabled" disabled>
-              Sin stock disponible
+          ) : (
+            <button
+              className="w-full bg-slate-200 text-slate-500 font-semibold py-3 px-4 rounded-lg cursor-not-allowed"
+              disabled
+            >
+              🚫 Sin stock disponible
             </button>
           )}
         </div>

@@ -109,9 +109,12 @@ const BotonAgregarCarrito: React.FC<BotonAgregarCarritoProps> = ({
   // ✅ Si no hay stock, no mostrar el componente
   if (sinStock) {
     return (
-      <div className={`agregar-carrito-container ${className}`}>
-        <button className="agregar-carrito-btn disabled sin-stock-btn" disabled>
-          Sin stock disponible
+      <div className={`space-y-4 ${className}`}>
+        <button
+          className="w-full bg-slate-300 text-slate-500 font-bold py-4 px-6 rounded-xl cursor-not-allowed text-lg"
+          disabled
+        >
+          🚫 Sin stock disponible
         </button>
       </div>
     );
@@ -120,63 +123,91 @@ const BotonAgregarCarrito: React.FC<BotonAgregarCarritoProps> = ({
   // ✅ Si no hay precio válido
   if (precioInvalido) {
     return (
-      <div className={`agregar-carrito-container ${className}`}>
-        <button className="agregar-carrito-btn disabled" disabled>
-          Precio no disponible
+      <div className={`space-y-4 ${className}`}>
+        <button
+          className="w-full bg-slate-300 text-slate-500 font-bold py-4 px-6 rounded-xl cursor-not-allowed text-lg"
+          disabled
+        >
+          💰 Precio no disponible
         </button>
       </div>
     );
   }
 
   return (
-    <div className={`agregar-carrito-container ${className}`}>
+    <div className={`space-y-4 ${className}`}>
+      {/* Selector de cantidad */}
       {showQuantity && (
-        <div className="quantity-selector">
-          <button
-            onClick={decrementar}
-            className="quantity-btn decrease"
-            disabled={cantidad <= 1 || agregado}
-            aria-label="Disminuir cantidad"
-            title="Disminuir cantidad"
-          >
-            −
-          </button>
+        <div className="bg-slate-50 rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-musical-slate">
+              Cantidad:
+            </span>
+            <span className="text-xs text-slate-500">
+              Stock: {instrumento.stock}
+            </span>
+          </div>
 
-          <input
-            type="number"
-            className="quantity-input"
-            value={cantidad}
-            onChange={handleCantidadChange}
-            min="1"
-            max={instrumento.stock}
-            disabled={agregado}
-            aria-label={`Cantidad: ${cantidad}`}
-          />
+          <div className="flex items-center space-x-3">
+            {/* Botón disminuir */}
+            <button
+              onClick={decrementar}
+              className="w-12 h-12 bg-white border-2 border-slate-200 text-musical-slate font-bold text-xl rounded-lg hover:border-musical-teal hover:text-musical-teal focus:ring-4 focus:ring-musical-teal/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-slate-200 disabled:hover:text-musical-slate"
+              disabled={cantidad <= 1 || agregado}
+              aria-label="Disminuir cantidad"
+              title="Disminuir cantidad"
+            >
+              −
+            </button>
 
-          <button
-            onClick={incrementar}
-            className="quantity-btn increase"
-            disabled={cantidad >= instrumento.stock || agregado}
-            aria-label="Aumentar cantidad"
-            title={
-              cantidad >= instrumento.stock
-                ? `Stock máximo: ${instrumento.stock}`
-                : "Aumentar cantidad"
-            }
-          >
-            +
-          </button>
+            {/* Input cantidad */}
+            <div className="flex-1 relative">
+              <input
+                type="number"
+                className="w-full text-center text-lg font-bold py-3 px-4 border-2 border-slate-200 rounded-lg focus:border-musical-teal focus:ring-4 focus:ring-musical-teal/20 transition-all disabled:bg-slate-100 disabled:cursor-not-allowed"
+                value={cantidad}
+                onChange={handleCantidadChange}
+                min="1"
+                max={instrumento.stock}
+                disabled={agregado}
+                aria-label={`Cantidad: ${cantidad}`}
+              />
+            </div>
 
-          {/* Mostrar stock disponible */}
-          <span className="stock-disponible-text">
-            (Stock: {instrumento.stock})
-          </span>
+            {/* Botón aumentar */}
+            <button
+              onClick={incrementar}
+              className="w-12 h-12 bg-white border-2 border-slate-200 text-musical-slate font-bold text-xl rounded-lg hover:border-musical-teal hover:text-musical-teal focus:ring-4 focus:ring-musical-teal/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-slate-200 disabled:hover:text-musical-slate"
+              disabled={cantidad >= instrumento.stock || agregado}
+              aria-label="Aumentar cantidad"
+              title={
+                cantidad >= instrumento.stock
+                  ? `Stock máximo: ${instrumento.stock}`
+                  : "Aumentar cantidad"
+              }
+            >
+              +
+            </button>
+          </div>
+
+          {/* Advertencia si está por exceder el stock */}
+          {cantidad === instrumento.stock && (
+            <div className="flex items-center justify-center space-x-2 text-musical-warning text-sm font-medium">
+              <span>⚠️</span>
+              <span>Stock máximo alcanzado</span>
+            </div>
+          )}
         </div>
       )}
 
+      {/* Botón agregar al carrito */}
       <button
-        className={`agregar-carrito-btn ${agregado ? "agregado" : ""} ${
-          stockInsuficiente ? "disabled" : ""
+        className={`w-full font-bold py-4 px-6 rounded-xl text-lg transition-all duration-200 focus:ring-4 focus:ring-musical-teal/20 ${
+          agregado
+            ? "bg-musical-success text-white shadow-lg"
+            : stockInsuficiente
+              ? "bg-slate-300 text-slate-500 cursor-not-allowed"
+              : "bg-gradient-to-r from-musical-teal to-musical-slate text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5"
         }`}
         onClick={handleAgregar}
         disabled={agregado || stockInsuficiente}
@@ -186,13 +217,21 @@ const BotonAgregarCarrito: React.FC<BotonAgregarCarritoProps> = ({
             : `Agregar ${cantidad} ${cantidad === 1 ? "unidad" : "unidades"} al carrito`
         }
       >
-        {agregado ? "✓ Agregado" : "Agregar al carrito"}
+        {agregado ? (
+          <span className="flex items-center justify-center space-x-2">
+            <span className="text-xl">✓</span>
+            <span>¡Agregado al carrito!</span>
+          </span>
+        ) : (
+          <span className="flex items-center justify-center space-x-2">
+            <span className="text-xl">🛒</span>
+            <span>
+              Agregar{showQuantity && cantidad > 1 ? ` (${cantidad})` : ""} al
+              carrito
+            </span>
+          </span>
+        )}
       </button>
-
-      {/* Advertencia si está por exceder el stock */}
-      {showQuantity && cantidad === instrumento.stock && (
-        <small className="stock-warning">⚠️ Stock máximo alcanzado</small>
-      )}
     </div>
   );
 };

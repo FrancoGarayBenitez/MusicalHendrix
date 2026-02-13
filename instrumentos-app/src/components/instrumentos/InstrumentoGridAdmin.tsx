@@ -4,7 +4,6 @@ import { useCategorias } from "../../hooks/useCategorias";
 import CategoriaFilter from "./CategoriaFilter";
 import Loading from "../common/Loading";
 import Error from "../common/Error";
-import "./InstrumentoTable.css";
 
 interface InstrumentoGridAdminProps {
   instrumentos: Instrumento[];
@@ -160,19 +159,33 @@ const InstrumentoGridAdmin = ({
   if (error) return <Error message={error} />;
 
   return (
-    <div className="instrumento-grid-admin" style={{ marginTop: "10px" }}>
-      <div className="admin-header">
-        <h2>Administración de Instrumentos</h2>
-        <div className="admin-actions" style={{ marginTop: "10px" }}>
+    <div className="space-y-6">
+      {/* Header con título y botón agregar */}
+      <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-musical-slate flex items-center">
+              <span className="mr-3">🎸</span>
+              Administración de Instrumentos
+            </h2>
+            <p className="text-slate-600 mt-1">
+              Gestiona el catálogo de instrumentos musicales
+            </p>
+          </div>
+
           {isAdmin && (
             <button
-              className="btn btn-primary add-btn"
+              className="inline-flex items-center bg-gradient-to-r from-musical-teal to-musical-slate text-white font-bold px-6 py-3 rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 space-x-2 text-sm"
               onClick={onAdd}
-              style={{ marginBottom: "20px" }}
             >
-              ➕ Agregar Instrumento
+              <span className="text-lg">➕</span>
+              <span>Agregar Instrumento</span>
             </button>
           )}
+        </div>
+
+        {/* Filtros */}
+        <div className="mt-4 pt-4 border-t border-slate-200">
           <CategoriaFilter
             selectedCategoriaId={selectedCategoriaId}
             onCategoriaChange={onFilterChange}
@@ -181,209 +194,263 @@ const InstrumentoGridAdmin = ({
       </div>
 
       {instrumentos.length === 0 ? (
-        <div className="no-data">
-          {selectedCategoriaId
-            ? "📂 No hay instrumentos en esta categoría"
-            : "📂 No hay instrumentos disponibles"}
+        <div className="bg-white rounded-2xl shadow-lg p-12 text-center border border-slate-200">
+          <div className="max-w-md mx-auto">
+            <div className="text-6xl mb-4">📂</div>
+            <h3 className="text-xl font-bold text-musical-slate mb-3">
+              {selectedCategoriaId
+                ? "No hay instrumentos en esta categoría"
+                : "No hay instrumentos disponibles"}
+            </h3>
+            <p className="text-slate-600 text-sm">
+              {selectedCategoriaId
+                ? "Intenta cambiar el filtro de categoría"
+                : "Comienza agregando tu primer instrumento"}
+            </p>
+          </div>
         </div>
       ) : (
-        <div className="table-responsive" style={{ marginTop: "20px" }}>
-          <table className="instrumento-table">
-            <thead>
-              <tr>
-                <th>Imagen</th>
-                <th>ID</th>
-                <th>Instrumento</th>
-                <th>Marca</th>
-                <th>Categoría</th>
-                <th>Precio</th>
-                <th>Stock</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {instrumentos.map((instrumento) => {
-                const instrumentoId = getInstrumentoId(instrumento);
-                const numericId = Number(instrumento.idInstrumento);
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-slate-200">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Imagen
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    ID
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Instrumento
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Marca
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Categoría
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Precio
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Stock
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {instrumentos.map((instrumento) => {
+                  const instrumentoId = getInstrumentoId(instrumento);
+                  const numericId = Number(instrumento.idInstrumento);
 
-                return (
-                  <tr key={instrumentoId}>
-                    <td className="img-cell" data-label="Imagen">
-                      <img
-                        src={getImageUrl(instrumento.imagen)}
-                        alt={instrumento.denominacion}
-                        className="table-img"
-                        onError={(e) => {
-                          console.error(
-                            "❌ Error al cargar imagen:",
-                            instrumento.imagen,
-                          );
-                          e.currentTarget.src = "/images/placeholder.jpg";
-                        }}
-                      />
-                    </td>
-                    <td data-label="ID">{instrumento.idInstrumento}</td>
-                    <td data-label="Instrumento">{instrumento.denominacion}</td>
-                    <td data-label="Marca">{instrumento.marca}</td>
-                    <td data-label="Categoría">
-                      {instrumento.categoriaInstrumento?.denominacion ??
-                        "Sin categoría"}
-                    </td>
-
-                    {/* CELDA DE PRECIO - Edición inline */}
-                    <td className="price-cell" data-label="Precio">
-                      {editingPrice === numericId ? (
-                        <div className="price-edit">
-                          <input
-                            type="number"
-                            value={newPrice}
-                            onChange={(e) => setNewPrice(e.target.value)}
-                            placeholder="Nuevo precio"
-                            style={{ width: "100px", marginRight: "5px" }}
-                            min="0.01"
-                            step="0.01"
-                          />
-                          <button
-                            onClick={() => handlePriceUpdate(numericId)}
-                            className="btn btn-sm btn-success"
-                            style={{ marginRight: "2px" }}
-                            title="Guardar precio"
-                          >
-                            ✓
-                          </button>
-                          <button
-                            onClick={handlePriceCancel}
-                            className="btn btn-sm btn-secondary"
-                            title="Cancelar"
-                          >
-                            ✗
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="price-display">
-                          <span>
-                            {typeof instrumento.precioActual === "number" &&
-                            !isNaN(instrumento.precioActual)
-                              ? `$${instrumento.precioActual.toLocaleString("es-AR")}`
-                              : "No definido"}
-                          </span>
-                          {onPriceUpdate && (
-                            <button
-                              onClick={() => handlePriceEditClick(instrumento)}
-                              className="btn btn-sm btn-outline"
-                              style={{ marginLeft: "5px" }}
-                              title="Actualizar precio"
-                            >
-                              💰
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </td>
-
-                    {/* CELDA DE STOCK - Edición inline */}
-                    <td
-                      className={`centered ${instrumento.stock === 0 ? "no-stock" : instrumento.stock < 5 ? "bajo-stock" : ""}`}
-                      data-label="Stock"
+                  return (
+                    <tr
+                      key={instrumentoId}
+                      className="border-b border-slate-100 hover:bg-slate-50 transition-colors duration-150"
                     >
-                      {editingStock === numericId ? (
-                        <div className="stock-edit">
-                          <input
-                            type="number"
-                            value={newStock}
-                            onChange={(e) => setNewStock(e.target.value)}
-                            placeholder="Cantidad"
-                            style={{ width: "80px", marginRight: "5px" }}
-                            min="1"
+                      <td className="px-6 py-4">
+                        <div className="w-16 h-16 bg-slate-100 rounded-lg overflow-hidden">
+                          <img
+                            src={getImageUrl(instrumento.imagen)}
+                            alt={instrumento.denominacion}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error(
+                                "❌ Error al cargar imagen:",
+                                instrumento.imagen,
+                              );
+                              e.currentTarget.src = "/images/placeholder.jpg";
+                            }}
                           />
-                          <button
-                            onClick={() => handleStockUpdate(numericId)}
-                            className="btn btn-sm btn-success"
-                            style={{ marginRight: "2px" }}
-                            title="Agregar stock"
-                          >
-                            ✓
-                          </button>
-                          <button
-                            onClick={handleStockCancel}
-                            className="btn btn-sm btn-secondary"
-                            title="Cancelar"
-                          >
-                            ✗
-                          </button>
                         </div>
-                      ) : (
-                        <div className="stock-display">
-                          <span
-                            className={
-                              instrumento.stock === 0
-                                ? "stock-zero"
-                                : instrumento.stock < 5
-                                  ? "stock-bajo"
-                                  : ""
-                            }
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium text-musical-slate">
+                        {instrumento.idInstrumento}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="max-w-xs">
+                          <p
+                            className="text-sm font-medium text-musical-slate line-clamp-2"
+                            title={instrumento.denominacion}
                           >
-                            {instrumento.stock}
-                          </span>
-                          {onStockUpdate && (
-                            <button
-                              onClick={() => handleStockEditClick(instrumento)}
-                              className="btn btn-sm btn-outline"
-                              style={{ marginLeft: "5px" }}
-                              title="Reponer stock"
-                            >
-                              📦
-                            </button>
-                          )}
+                            {instrumento.denominacion}
+                          </p>
                         </div>
-                      )}
-                    </td>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {instrumento.marca}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+                          {instrumento.categoriaInstrumento?.denominacion ??
+                            "Sin categoría"}
+                        </span>
+                      </td>
 
-                    {/* CELDA DE ACCIONES */}
-                    <td className="actions-cell" data-label="Acciones">
-                      {confirmDelete === instrumentoId ? (
-                        <div className="confirm-delete">
-                          <span>¿Eliminar?</span>
-                          <button
-                            onClick={() => handleConfirmDelete(instrumentoId)}
-                            className="btn btn-danger btn-sm"
-                          >
-                            Sí
-                          </button>
-                          <button
-                            onClick={handleCancelDelete}
-                            className="btn btn-secondary btn-sm"
-                          >
-                            No
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => onEdit(instrumento)}
-                            className="btn btn-outline btn-sm edit-btn"
-                            title="Editar instrumento"
-                          >
-                            ✏️ Editar
-                          </button>
-
-                          {isAdmin && (
+                      {/* CELDA DE PRECIO - Edición inline */}
+                      <td className="px-6 py-4">
+                        {editingPrice === numericId ? (
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="number"
+                              value={newPrice}
+                              onChange={(e) => setNewPrice(e.target.value)}
+                              placeholder="Nuevo precio"
+                              className="w-24 px-2 py-1 text-sm border-2 border-slate-200 rounded-lg focus:border-musical-teal focus:ring-4 focus:ring-musical-teal/10 transition-all"
+                              min="0.01"
+                              step="0.01"
+                            />
                             <button
-                              onClick={() => handleDeleteClick(instrumentoId)}
-                              className="btn btn-outline btn-sm delete-btn"
-                              title="Eliminar instrumento"
+                              onClick={() => handlePriceUpdate(numericId)}
+                              className="w-6 h-6 bg-green-500 text-white text-xs rounded flex items-center justify-center hover:bg-green-600 transition-colors"
+                              title="Guardar precio"
                             >
-                              🗑️ Eliminar
+                              ✓
                             </button>
-                          )}
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                            <button
+                              onClick={handlePriceCancel}
+                              className="w-6 h-6 bg-slate-400 text-white text-xs rounded flex items-center justify-center hover:bg-slate-500 transition-colors"
+                              title="Cancelar"
+                            >
+                              ✗
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-semibold text-musical-teal">
+                              {typeof instrumento.precioActual === "number" &&
+                              !isNaN(instrumento.precioActual)
+                                ? `$${instrumento.precioActual.toLocaleString("es-AR")}`
+                                : "No definido"}
+                            </span>
+                            {onPriceUpdate && (
+                              <button
+                                onClick={() =>
+                                  handlePriceEditClick(instrumento)
+                                }
+                                className="ml-2 w-6 h-6 bg-slate-100 text-musical-slate text-xs rounded hover:bg-musical-teal hover:text-white transition-all duration-200 flex items-center justify-center"
+                                title="Actualizar precio"
+                              >
+                                💰
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* CELDA DE STOCK - Edición inline */}
+                      <td className="px-6 py-4">
+                        {editingStock === numericId ? (
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="number"
+                              value={newStock}
+                              onChange={(e) => setNewStock(e.target.value)}
+                              placeholder="Cantidad"
+                              className="w-20 px-2 py-1 text-sm border-2 border-slate-200 rounded-lg focus:border-musical-teal focus:ring-4 focus:ring-musical-teal/10 transition-all"
+                              min="1"
+                            />
+                            <button
+                              onClick={() => handleStockUpdate(numericId)}
+                              className="w-6 h-6 bg-green-500 text-white text-xs rounded flex items-center justify-center hover:bg-green-600 transition-colors"
+                              title="Agregar stock"
+                            >
+                              ✓
+                            </button>
+                            <button
+                              onClick={handleStockCancel}
+                              className="w-6 h-6 bg-slate-400 text-white text-xs rounded flex items-center justify-center hover:bg-slate-500 transition-colors"
+                              title="Cancelar"
+                            >
+                              ✗
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <span
+                              className={`text-sm font-medium ${
+                                instrumento.stock === 0
+                                  ? "text-red-500"
+                                  : instrumento.stock < 5
+                                    ? "text-musical-warning"
+                                    : "text-musical-success"
+                              }`}
+                            >
+                              {instrumento.stock}
+                              <span className="text-xs text-slate-500 ml-1">
+                                {instrumento.stock === 1
+                                  ? "unidad"
+                                  : "unidades"}
+                              </span>
+                            </span>
+                            {onStockUpdate && (
+                              <button
+                                onClick={() =>
+                                  handleStockEditClick(instrumento)
+                                }
+                                className="ml-2 w-6 h-6 bg-slate-100 text-musical-slate text-xs rounded hover:bg-musical-teal hover:text-white transition-all duration-200 flex items-center justify-center"
+                                title="Reponer stock"
+                              >
+                                📦
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* CELDA DE ACCIONES */}
+                      <td className="px-6 py-4">
+                        {confirmDelete === instrumentoId ? (
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm text-musical-slate mr-2">
+                              ¿ Eliminar?
+                            </span>
+                            <button
+                              onClick={() => handleConfirmDelete(instrumentoId)}
+                              className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-colors font-medium"
+                            >
+                              Sí
+                            </button>
+                            <button
+                              onClick={handleCancelDelete}
+                              className="px-3 py-1 bg-slate-400 text-white text-xs rounded hover:bg-slate-500 transition-colors font-medium"
+                            >
+                              No
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => onEdit(instrumento)}
+                              className="inline-flex items-center px-3 py-1.5 bg-slate-100 text-musical-slate text-xs font-medium rounded-lg hover:bg-musical-teal hover:text-white transition-all duration-200 space-x-1"
+                              title="Editar instrumento"
+                            >
+                              <span>✏️</span>
+                              <span>Editar</span>
+                            </button>
+
+                            {isAdmin && (
+                              <button
+                                onClick={() => handleDeleteClick(instrumentoId)}
+                                className="inline-flex items-center px-3 py-1.5 bg-red-50 text-red-600 text-xs font-medium rounded-lg hover:bg-red-100 transition-all duration-200 space-x-1"
+                                title="Eliminar instrumento"
+                              >
+                                <span>🗑️</span>
+                                <span>Eliminar</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

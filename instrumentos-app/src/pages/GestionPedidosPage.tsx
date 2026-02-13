@@ -10,7 +10,6 @@ import { useAuth } from "../context/AuthContext";
 import { Navigate } from "react-router-dom";
 import Loading from "../components/common/Loading";
 import Error from "../components/common/Error";
-import "./AdminStyles.css";
 
 const GestionPedidosPage: React.FC = () => {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
@@ -257,336 +256,547 @@ const GestionPedidosPage: React.FC = () => {
   if (error) return <Error message={error} />;
 
   return (
-    <div className="admin-page">
+    <div className="min-h-screen bg-slate-50">
       {/* Header de la página */}
-      <div className="page-header">
-        <h1>📦 Gestión de Pedidos</h1>
-        <p>Administración de todos los pedidos realizados</p>
-        <div className="admin-info">
-          <span className="admin-user">
-            👤 {user.email} <span className="role-badge admin">ADMIN</span>
-          </span>
-        </div>
-      </div>
-
-      {/* Estadísticas */}
-      <div className="stats-container">
-        <div className="stat-card">
-          <span className="stat-value">{estadisticas.total}</span>
-          <span className="stat-label">Total Pedidos</span>
-        </div>
-        <div className="stat-card warning">
-          <span className="stat-value">{estadisticas.pendientesPago}</span>
-          <span className="stat-label">Pendientes Pago</span>
-        </div>
-        <div className="stat-card success">
-          <span className="stat-value">{estadisticas.pagados}</span>
-          <span className="stat-label">Pagados</span>
-        </div>
-        <div className="stat-card info">
-          <span className="stat-value">{estadisticas.enviados}</span>
-          <span className="stat-label">Enviados</span>
-        </div>
-        <div className="stat-card success">
-          <span className="stat-value">{estadisticas.entregados}</span>
-          <span className="stat-label">Entregados</span>
-        </div>
-        <div className="stat-card highlight">
-          <span className="stat-value">
-            ${formatPrice(estadisticas.totalVentas)}
-          </span>
-          <span className="stat-label">Total Ventas</span>
-        </div>
-      </div>
-
-      {/* Filtros */}
-      <div className="filter-container">
-        <div className="date-filters">
-          <div className="filter-group">
-            <label htmlFor="date-from">Desde:</label>
-            <input
-              type="date"
-              id="date-from"
-              value={filterDateFrom}
-              onChange={(e) => setFilterDateFrom(e.target.value)}
-            />
-          </div>
-          <div className="filter-group">
-            <label htmlFor="date-to">Hasta:</label>
-            <input
-              type="date"
-              id="date-to"
-              value={filterDateTo}
-              onChange={(e) => setFilterDateTo(e.target.value)}
-            />
-          </div>
+      <div className="bg-gradient-to-r from-musical-slate via-musical-teal to-musical-slate py-8 px-4 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-6 left-10 w-24 h-24 bg-white rounded-full blur-2xl"></div>
+          <div className="absolute bottom-6 right-10 w-20 h-20 bg-white rounded-full blur-2xl"></div>
         </div>
 
-        <div className="filter-group">
-          <label htmlFor="filter-estado">Estado:</label>
-          <select
-            id="filter-estado"
-            value={filterEstado}
-            onChange={(e) => setFilterEstado(e.target.value)}
-          >
-            <option value="">Todos</option>
-            <option value={EstadoPedido.PENDIENTE_PAGO}>
-              Pendiente de Pago
-            </option>
-            <option value={EstadoPedido.PAGADO}>Pagado</option>
-            <option value={EstadoPedido.ENVIADO}>Enviado</option>
-            <option value={EstadoPedido.ENTREGADO}>Entregado</option>
-            <option value={EstadoPedido.CANCELADO}>Cancelado</option>
-          </select>
-        </div>
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                <span className="text-3xl">📦</span>
+              </div>
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">
+                  Gestión de Pedidos
+                </h1>
+                <p className="text-white/80 text-lg">
+                  Administración de todos los pedidos realizados
+                </p>
+              </div>
+            </div>
 
-        <div className="filter-group">
-          <label htmlFor="filter-usuario">Cliente:</label>
-          <input
-            type="text"
-            id="filter-usuario"
-            placeholder="Buscar por nombre o email..."
-            value={filterUsuario}
-            onChange={(e) => setFilterUsuario(e.target.value)}
-          />
-        </div>
-
-        <div className="filter-group">
-          <label htmlFor="sort-by">Ordenar por:</label>
-          <select
-            id="sort-by"
-            value={sortBy}
-            onChange={(e) =>
-              setSortBy(e.target.value as "fecha" | "total" | "estado")
-            }
-          >
-            <option value="fecha">Fecha (más reciente)</option>
-            <option value="total">Total (mayor a menor)</option>
-            <option value="estado">Estado (A-Z)</option>
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <button onClick={clearFilters} className="btn-clear-filters">
-            🧹 Limpiar Filtros
-          </button>
-        </div>
-      </div>
-
-      {/* Lista de pedidos */}
-      {filteredPedidos.length === 0 ? (
-        <div className="no-data">
-          <p>📭 No hay pedidos para mostrar con los filtros actuales.</p>
-          {(filterDateFrom ||
-            filterDateTo ||
-            filterEstado ||
-            filterUsuario) && (
-            <button onClick={clearFilters} className="btn-secondary">
-              Ver todos los pedidos
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="pedidos-list">
-          {filteredPedidos.map((pedido) => {
-            if (!pedido.id) {
-              console.error("❌ Pedido sin ID:", pedido);
-              return null;
-            }
-
-            const isExpanded = expandedPedidoId === pedido.id;
-            const nombreCompleto = pedido.usuario
-              ? `${pedido.usuario.nombre} ${pedido.usuario.apellido}`
-              : "Usuario Desconocido";
-
-            return (
-              <div
-                key={pedido.id}
-                className={`pedido-card admin-pedido ${isExpanded ? "expanded" : ""}`}
-              >
-                {/* Header del pedido */}
-                <div
-                  className="pedido-header"
-                  onClick={() => toggleExpandPedido(pedido.id)}
-                >
-                  <div className="pedido-basic-info">
-                    <span className="pedido-id">Pedido #{pedido.id}</span>
-                    <span className="pedido-date">
-                      {formatDate(pedido.fecha)}
-                    </span>
-                  </div>
-
-                  <div className="pedido-user-info">
-                    <span className="pedido-user">👤 {nombreCompleto}</span>
-                    {pedido.usuario?.email && (
-                      <span className="pedido-user-email">
-                        ({pedido.usuario.email})
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="pedido-status-price">
-                    <span
-                      className={`pedido-status status-${getEstadoClass(pedido.estado || EstadoPedido.PENDIENTE_PAGO)}`}
-                    >
-                      {getEstadoTexto(
-                        pedido.estado || EstadoPedido.PENDIENTE_PAGO,
-                      )}
-                    </span>
-                    <span className="pedido-total">
-                      ${formatPrice(pedido.total || 0)}
-                    </span>
-                  </div>
-
-                  <div
-                    className="pedido-expand-icon"
-                    aria-label={isExpanded ? "Contraer" : "Expandir"}
-                  >
-                    {isExpanded ? "▲" : "▼"}
-                  </div>
+            <div className="hidden sm:flex items-center space-x-4">
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/30">
+                <div className="flex items-center space-x-2 text-white">
+                  <span className="text-sm">👤</span>
+                  <span className="font-medium">{user.email}</span>
+                  <span className="bg-emerald-400 text-emerald-900 px-3 py-1 rounded-lg text-xs font-bold">
+                    ADMIN
+                  </span>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-                {/* Detalles del pedido */}
-                {isExpanded && (
-                  <div className="pedido-details">
-                    <h4>Productos en este pedido</h4>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Estadísticas */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-musical-slate mb-2">
+                {estadisticas.total}
+              </div>
+              <div className="text-sm text-slate-600 font-medium">
+                Total Pedidos
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl shadow-lg p-6 border border-amber-200 bg-gradient-to-br from-amber-50 to-white">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-amber-600 mb-2">
+                {estadisticas.pendientesPago}
+              </div>
+              <div className="text-sm text-amber-700 font-medium">
+                Pendientes Pago
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl shadow-lg p-6 border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-emerald-600 mb-2">
+                {estadisticas.pagados}
+              </div>
+              <div className="text-sm text-emerald-700 font-medium">
+                Pagados
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl shadow-lg p-6 border border-blue-200 bg-gradient-to-br from-blue-50 to-white">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-blue-600 mb-2">
+                {estadisticas.enviados}
+              </div>
+              <div className="text-sm text-blue-700 font-medium">Enviados</div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl shadow-lg p-6 border border-green-200 bg-gradient-to-br from-green-50 to-white">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-green-600 mb-2">
+                {estadisticas.entregados}
+              </div>
+              <div className="text-sm text-green-700 font-medium">
+                Entregados
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl shadow-lg p-6 border border-musical-teal bg-gradient-to-br from-musical-teal/10 to-white">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-musical-teal mb-2">
+                ${formatPrice(estadisticas.totalVentas)}
+              </div>
+              <div className="text-sm text-musical-slate font-medium">
+                Total Ventas
+              </div>
+            </div>
+          </div>
+        </div>
 
-                    <div className="pedido-items">
-                      {pedido.detalles && pedido.detalles.length > 0 ? (
-                        pedido.detalles.map((detalle, index) => {
-                          const instrumento = detalle.instrumento;
+        {/* Filtros */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200 space-y-6">
+          <h3 className="text-xl font-bold text-musical-slate mb-4 flex items-center">
+            <span className="mr-2">🔍</span>
+            Filtros de Búsqueda
+          </h3>
 
-                          if (!instrumento) {
-                            console.warn(
-                              "⚠️ Detalle sin instrumento:",
-                              detalle,
-                            );
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            {/* Filtros de fecha */}
+            <div className="space-y-2">
+              <label
+                htmlFor="date-from"
+                className="block text-sm font-medium text-slate-700"
+              >
+                Desde:
+              </label>
+              <input
+                type="date"
+                id="date-from"
+                value={filterDateFrom}
+                onChange={(e) => setFilterDateFrom(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-musical-teal focus:ring-2 focus:ring-musical-teal/20 transition-all duration-200"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label
+                htmlFor="date-to"
+                className="block text-sm font-medium text-slate-700"
+              >
+                Hasta:
+              </label>
+              <input
+                type="date"
+                id="date-to"
+                value={filterDateTo}
+                onChange={(e) => setFilterDateTo(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-musical-teal focus:ring-2 focus:ring-musical-teal/20 transition-all duration-200"
+              />
+            </div>
+
+            {/* Filtro por estado */}
+            <div className="space-y-2">
+              <label
+                htmlFor="filter-estado"
+                className="block text-sm font-medium text-slate-700"
+              >
+                Estado:
+              </label>
+              <select
+                id="filter-estado"
+                value={filterEstado}
+                onChange={(e) => setFilterEstado(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-musical-teal focus:ring-2 focus:ring-musical-teal/20 bg-white transition-all duration-200"
+              >
+                <option value="">Todos</option>
+                <option value={EstadoPedido.PENDIENTE_PAGO}>
+                  Pendiente de Pago
+                </option>
+                <option value={EstadoPedido.PAGADO}>Pagado</option>
+                <option value={EstadoPedido.ENVIADO}>Enviado</option>
+                <option value={EstadoPedido.ENTREGADO}>Entregado</option>
+                <option value={EstadoPedido.CANCELADO}>Cancelado</option>
+              </select>
+            </div>
+
+            {/* Filtro por usuario */}
+            <div className="space-y-2">
+              <label
+                htmlFor="filter-usuario"
+                className="block text-sm font-medium text-slate-700"
+              >
+                Cliente:
+              </label>
+              <input
+                type="text"
+                id="filter-usuario"
+                placeholder="Buscar por nombre o email..."
+                value={filterUsuario}
+                onChange={(e) => setFilterUsuario(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-musical-teal focus:ring-2 focus:ring-musical-teal/20 transition-all duration-200"
+              />
+            </div>
+
+            {/* Ordenar por */}
+            <div className="space-y-2">
+              <label
+                htmlFor="sort-by"
+                className="block text-sm font-medium text-slate-700"
+              >
+                Ordenar por:
+              </label>
+              <select
+                id="sort-by"
+                value={sortBy}
+                onChange={(e) =>
+                  setSortBy(e.target.value as "fecha" | "total" | "estado")
+                }
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-musical-teal focus:ring-2 focus:ring-musical-teal/20 bg-white transition-all duration-200"
+              >
+                <option value="fecha">Fecha (más reciente)</option>
+                <option value="total">Total (mayor a menor)</option>
+                <option value="estado">Estado (A-Z)</option>
+              </select>
+            </div>
+
+            {/* Botón limpiar */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-transparent">
+                .
+              </label>
+              <button
+                onClick={clearFilters}
+                className="w-full inline-flex items-center justify-center px-4 py-2 bg-slate-100 text-musical-slate text-sm font-medium rounded-lg hover:bg-musical-teal hover:text-white transition-all duration-200 space-x-2"
+              >
+                <span>🧹</span>
+                <span>Limpiar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Lista de pedidos */}
+        {filteredPedidos.length === 0 ? (
+          <div className="bg-white rounded-2xl shadow-lg p-12 text-center border border-slate-200">
+            <div className="max-w-md mx-auto">
+              <div className="text-6xl mb-4">📭</div>
+              <h3 className="text-xl font-bold text-musical-slate mb-3">
+                No hay pedidos para mostrar
+              </h3>
+              <p className="text-slate-600 text-sm mb-4">
+                No hay pedidos para mostrar con los filtros actuales.
+              </p>
+              {(filterDateFrom ||
+                filterDateTo ||
+                filterEstado ||
+                filterUsuario) && (
+                <button
+                  onClick={clearFilters}
+                  className="inline-flex items-center px-4 py-2 bg-musical-teal text-white font-medium rounded-lg hover:bg-musical-slate transition-all duration-200 space-x-2"
+                >
+                  <span>🔄</span>
+                  <span>Ver todos los pedidos</span>
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredPedidos.map((pedido) => {
+              if (!pedido.id) {
+                console.error("❌ Pedido sin ID:", pedido);
+                return null;
+              }
+
+              const isExpanded = expandedPedidoId === pedido.id;
+              const nombreCompleto = pedido.usuario
+                ? `${pedido.usuario.nombre} ${pedido.usuario.apellido}`
+                : "Usuario Desconocido";
+
+              return (
+                <div
+                  key={pedido.id}
+                  className={`bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden transition-all duration-300 hover:shadow-xl ${
+                    isExpanded ? "ring-2 ring-musical-teal/50 shadow-2xl" : ""
+                  }`}
+                >
+                  {/* Header del pedido */}
+                  <div
+                    className="p-6 cursor-pointer hover:bg-slate-50 transition-colors duration-200"
+                    onClick={() => toggleExpandPedido(pedido.id)}
+                  >
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+                      {/* Info básica del pedido */}
+                      <div className="flex flex-col space-y-2">
+                        <div className="flex items-center space-x-4">
+                          <span className="text-lg font-bold text-musical-slate">
+                            Pedido #{pedido.id}
+                          </span>
+                          <span className="text-sm text-slate-600">
+                            {formatDate(pedido.fecha)}
+                          </span>
+                        </div>
+
+                        {/* Info del usuario */}
+                        <div className="flex items-center space-x-2 text-sm">
+                          <span className="text-slate-600">👤</span>
+                          <span className="font-medium text-musical-slate">
+                            {nombreCompleto}
+                          </span>
+                          {pedido.usuario?.email && (
+                            <span className="text-slate-500">
+                              ({pedido.usuario.email})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Estado y precio */}
+                      <div className="flex items-center justify-between lg:justify-end lg:space-x-6">
+                        <span
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                            pedido.estado === EstadoPedido.PENDIENTE_PAGO
+                              ? "bg-amber-100 text-amber-800"
+                              : pedido.estado === EstadoPedido.PAGADO
+                                ? "bg-emerald-100 text-emerald-800"
+                                : pedido.estado === EstadoPedido.ENVIADO
+                                  ? "bg-blue-100 text-blue-800"
+                                  : pedido.estado === EstadoPedido.ENTREGADO
+                                    ? "bg-green-100 text-green-800"
+                                    : pedido.estado === EstadoPedido.CANCELADO
+                                      ? "bg-red-100 text-red-800"
+                                      : "bg-slate-100 text-slate-800"
+                          }`}
+                        >
+                          {getEstadoTexto(
+                            pedido.estado || EstadoPedido.PENDIENTE_PAGO,
+                          )}
+                        </span>
+
+                        <div className="flex items-center space-x-3">
+                          <span className="text-xl font-bold text-musical-teal">
+                            ${formatPrice(pedido.total || 0)}
+                          </span>
+
+                          <div
+                            className={`transform transition-transform duration-200 text-musical-slate ${
+                              isExpanded ? "rotate-180" : ""
+                            }`}
+                          >
+                            ▲
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Detalles del pedido */}
+                  {isExpanded && (
+                    <div className="border-t border-slate-200 p-6 bg-slate-50 space-y-6">
+                      <h4 className="text-lg font-bold text-musical-slate mb-4 flex items-center">
+                        <span className="mr-2">📎</span>
+                        Productos en este pedido
+                      </h4>
+
+                      <div className="space-y-4">
+                        {pedido.detalles && pedido.detalles.length > 0 ? (
+                          pedido.detalles.map((detalle, index) => {
+                            const instrumento = detalle.instrumento;
+
+                            if (!instrumento) {
+                              return (
+                                <div
+                                  key={index}
+                                  className="bg-white rounded-xl p-4 border border-slate-200"
+                                >
+                                  <div className="flex items-center space-x-2 text-amber-600">
+                                    <span>⚠️</span>
+                                    <p className="font-medium">
+                                      Información del producto no disponible
+                                    </p>
+                                  </div>
+                                  <div className="mt-3 space-y-1 text-sm text-slate-600">
+                                    <p>Cantidad: {detalle.cantidad}</p>
+                                    <p>
+                                      Precio: $
+                                      {formatPrice(detalle.precioUnitario)}
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            }
+
                             return (
-                              <div key={index} className="pedido-item">
-                                <div className="item-basic-info">
-                                  <p>
-                                    ⚠️ Información del producto no disponible
-                                  </p>
-                                  <p>Cantidad: {detalle.cantidad}</p>
-                                  <p>
-                                    Precio: $
-                                    {formatPrice(detalle.precioUnitario)}
-                                  </p>
+                              <div
+                                key={index}
+                                className="bg-white rounded-xl border border-slate-200 overflow-hidden"
+                              >
+                                <div className="p-4">
+                                  <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                                    {/* Imagen del instrumento */}
+                                    <div className="flex-shrink-0">
+                                      <div className="w-20 h-20 bg-slate-100 rounded-lg overflow-hidden">
+                                        <img
+                                          src={getImageUrl(instrumento.imagen)}
+                                          alt={instrumento.denominacion}
+                                          className="w-full h-full object-cover"
+                                          onError={(e) => {
+                                            console.error(
+                                              "❌ Error al cargar imagen:",
+                                              instrumento.imagen,
+                                            );
+                                            e.currentTarget.src =
+                                              "/images/placeholder.jpg";
+                                          }}
+                                          loading="lazy"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    {/* Info del instrumento */}
+                                    <div className="flex-1 space-y-2">
+                                      <h5 className="font-bold text-musical-slate text-lg">
+                                        {instrumento.denominacion}
+                                      </h5>
+                                      <div className="space-y-1 text-sm text-slate-600">
+                                        <p>
+                                          <span className="font-medium">
+                                            Marca:
+                                          </span>{" "}
+                                          {instrumento.marca} |
+                                          <span className="font-medium">
+                                            {" "}
+                                            ID:
+                                          </span>{" "}
+                                          {instrumento.idInstrumento}
+                                        </p>
+                                        <p>
+                                          <span className="font-medium">
+                                            Categoría:
+                                          </span>{" "}
+                                          {instrumento.categoriaInstrumento
+                                            ?.denominacion || "Sin categoría"}
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {/* Precio y cantidad */}
+                                    <div className="flex-shrink-0 text-right space-y-1">
+                                      <p className="text-lg font-bold text-musical-teal">
+                                        ${formatPrice(detalle.precioUnitario)}
+                                      </p>
+                                      <p className="text-sm text-slate-600">
+                                        Cantidad: {detalle.cantidad}
+                                      </p>
+                                      <p className="text-lg font-bold text-musical-slate border-t border-slate-200 pt-2 mt-2">
+                                        $
+                                        {formatPrice(
+                                          detalle.precioUnitario *
+                                            detalle.cantidad,
+                                        )}
+                                      </p>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             );
-                          }
-
-                          return (
-                            <div key={index} className="pedido-item">
-                              {/* Imagen del instrumento */}
-                              <div className="item-image">
-                                <img
-                                  src={getImageUrl(instrumento.imagen)}
-                                  alt={instrumento.denominacion}
-                                  onError={(e) => {
-                                    console.error(
-                                      "❌ Error al cargar imagen:",
-                                      instrumento.imagen,
-                                    );
-                                    e.currentTarget.src =
-                                      "/images/placeholder.jpg";
-                                  }}
-                                  loading="lazy"
-                                />
-                              </div>
-
-                              {/* Info del instrumento */}
-                              <div className="item-info">
-                                <h5>{instrumento.denominacion}</h5>
-                                <p className="item-brand-code">
-                                  <strong>Marca:</strong> {instrumento.marca} |{" "}
-                                  <strong>ID:</strong>{" "}
-                                  {instrumento.idInstrumento}
-                                </p>
-                                <p className="item-category">
-                                  <strong>Categoría:</strong>{" "}
-                                  {instrumento.categoriaInstrumento
-                                    ?.denominacion || "Sin categoría"}
-                                </p>
-                              </div>
-
-                              {/* Precio y cantidad */}
-                              <div className="item-price">
-                                <p className="price">
-                                  ${formatPrice(detalle.precioUnitario)}
-                                </p>
-                                <p className="quantity">
-                                  Cantidad: {detalle.cantidad}
-                                </p>
-                                <p className="subtotal">
-                                  Subtotal: $
-                                  {formatPrice(
-                                    detalle.precioUnitario * detalle.cantidad,
-                                  )}
-                                </p>
-                              </div>
+                          })
+                        ) : (
+                          <div className="bg-white rounded-xl p-8 text-center border border-slate-200">
+                            <div className="text-slate-400 text-4xl mb-3">
+                              📦
                             </div>
-                          );
-                        })
-                      ) : (
-                        <div className="no-items">
-                          <p>⚠️ No hay productos en este pedido</p>
-                        </div>
-                      )}
-                    </div>
+                            <p className="text-slate-600">
+                              No hay productos en este pedido
+                            </p>
+                          </div>
+                        )}
+                      </div>
 
-                    {/* Resumen del pedido */}
-                    <div className="pedido-summary">
-                      <div className="summary-row">
-                        <span>Total del Pedido:</span>
-                        <span className="total-price">
-                          ${formatPrice(pedido.total || 0)}
-                        </span>
+                      {/* Resumen del pedido */}
+                      <div className="bg-gradient-to-r from-musical-slate/5 to-musical-teal/5 rounded-xl p-6 border border-musical-teal/20">
+                        <div className="flex items-center justify-between">
+                          <span className="text-lg font-medium text-musical-slate">
+                            Total del Pedido:
+                          </span>
+                          <span className="text-2xl font-bold text-musical-teal">
+                            ${formatPrice(pedido.total || 0)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Acciones de administración */}
+                      <div className="bg-white rounded-xl p-6 border border-slate-200">
+                        <h5 className="text-lg font-bold text-musical-slate mb-4 flex items-center">
+                          <span className="mr-2">⚙️</span>
+                          Administrar Pedido
+                        </h5>
+
+                        <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                          <label
+                            htmlFor={`estado-${pedido.id}`}
+                            className="text-sm font-medium text-slate-700"
+                          >
+                            Cambiar estado del pedido:
+                          </label>
+
+                          <div className="flex items-center space-x-3">
+                            <select
+                              id={`estado-${pedido.id}`}
+                              value={
+                                pedido.estado || EstadoPedido.PENDIENTE_PAGO
+                              }
+                              onChange={(e) =>
+                                handleCambiarEstado(pedido.id, e.target.value)
+                              }
+                              disabled={updatingEstado === pedido.id}
+                              className={`px-4 py-2 text-sm border border-slate-200 rounded-lg focus:border-musical-teal focus:ring-2 focus:ring-musical-teal/20 bg-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                updatingEstado === pedido.id
+                                  ? "animate-pulse"
+                                  : ""
+                              }`}
+                            >
+                              <option value={EstadoPedido.PENDIENTE_PAGO}>
+                                Pendiente de Pago
+                              </option>
+                              <option value={EstadoPedido.PAGADO}>
+                                Pagado
+                              </option>
+                              <option value={EstadoPedido.ENVIADO}>
+                                Enviado
+                              </option>
+                              <option value={EstadoPedido.ENTREGADO}>
+                                Entregado
+                              </option>
+                              <option value={EstadoPedido.CANCELADO}>
+                                Cancelado
+                              </option>
+                            </select>
+
+                            {updatingEstado === pedido.id && (
+                              <div className="flex items-center space-x-2 text-musical-teal">
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-musical-teal border-t-transparent"></div>
+                                <span className="text-sm font-medium">
+                                  Actualizando...
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
-
-                    {/* Acciones de administración */}
-                    <div className="pedido-actions">
-                      <label htmlFor={`estado-${pedido.id}`}>
-                        Cambiar estado del pedido:
-                      </label>
-                      <select
-                        id={`estado-${pedido.id}`}
-                        value={pedido.estado || EstadoPedido.PENDIENTE_PAGO}
-                        onChange={(e) =>
-                          handleCambiarEstado(pedido.id, e.target.value)
-                        }
-                        disabled={updatingEstado === pedido.id}
-                        className={
-                          updatingEstado === pedido.id ? "updating" : ""
-                        }
-                      >
-                        <option value={EstadoPedido.PENDIENTE_PAGO}>
-                          Pendiente de Pago
-                        </option>
-                        <option value={EstadoPedido.PAGADO}>Pagado</option>
-                        <option value={EstadoPedido.ENVIADO}>Enviado</option>
-                        <option value={EstadoPedido.ENTREGADO}>
-                          Entregado
-                        </option>
-                        <option value={EstadoPedido.CANCELADO}>
-                          Cancelado
-                        </option>
-                      </select>
-                      {updatingEstado === pedido.id && (
-                        <span className="updating-indicator">
-                          ⏳ Actualizando...
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -2,7 +2,6 @@ import { useState, useEffect, FormEvent } from "react";
 import { useSearchParams, useNavigate, Link, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { authService } from "../service/authService";
-import "./AuthPages.css";
 
 const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();

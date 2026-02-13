@@ -38,7 +38,7 @@ const CarritoDrawer: React.FC = () => {
     if (savedPedidoId && mensajePedido) {
       const pedidoIdNumber = parseInt(savedPedidoId, 10);
       if (!isNaN(pedidoIdNumber)) {
-        setPedidoId(pedidoIdNumber); // ✅ Guardar como number
+        setPedidoId(pedidoIdNumber);
         console.log("📦 Pedido en progreso encontrado:", pedidoIdNumber);
       }
     }
@@ -87,14 +87,13 @@ const CarritoDrawer: React.FC = () => {
       }
 
       console.log("📝 Guardando pedido...");
-      const pedidoResponse = await guardarPedido(); // ✅ Retorna PedidoResponse | null
+      const pedidoResponse = await guardarPedido();
 
       if (pedidoResponse && pedidoResponse.id) {
-        // ✅ CORREGIDO: Usar 'id' en lugar de 'idPedido'
         const idPedido = pedidoResponse.id;
         console.log("🎉 Pedido guardado con ID:", idPedido);
 
-        setPedidoId(idPedido); // ✅ Ahora es number
+        setPedidoId(idPedido);
         setEstadoPedido(pedidoResponse.estado || EstadoPedido.PENDIENTE_PAGO);
 
         // Guardar en localStorage por si el usuario recarga la página
@@ -184,15 +183,23 @@ const CarritoDrawer: React.FC = () => {
   );
 
   return (
-    <div className="carrito-drawer-container">
-      <div className="carrito-drawer-overlay" onClick={toggleCarrito}></div>
+    <div className="fixed inset-0 z-50 flex">
+      {/* Overlay */}
+      <div
+        className="flex-1 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
+        onClick={toggleCarrito}
+      ></div>
 
-      <div className="carrito-drawer">
+      {/* Drawer */}
+      <div className="w-full max-w-md bg-white shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col">
         {/* Header */}
-        <div className="carrito-header">
-          <h2>Carrito de Compras</h2>
+        <div className="bg-gradient-to-r from-musical-slate to-musical-teal px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <span className="text-2xl">🛒</span>
+            <h2 className="text-xl font-bold text-white">Carrito de Compras</h2>
+          </div>
           <button
-            className="close-btn"
+            className="w-8 h-8 text-white/80 hover:text-white hover:bg-white/10 rounded-full flex items-center justify-center transition-all duration-200 text-2xl"
             onClick={toggleCarrito}
             aria-label="Cerrar carrito"
           >
@@ -200,123 +207,177 @@ const CarritoDrawer: React.FC = () => {
           </button>
         </div>
 
-        {/* Loading */}
-        {loading && <Loading message="Procesando pedido..." />}
-
-        {/* Error */}
-        {error && !loading && (
-          <div className="mensaje-error">
-            <p>❌ {error}</p>
-          </div>
-        )}
-
-        {/* Mensaje de éxito con botón de pago */}
-        {mensajePedido && pedidoId && !loading && (
-          <div className="mensaje-exito">
-            <p>✅ {mensajePedido}</p>
-
-            <div className="payment-button-container">
-              <MercadoPagoButton
-                pedidoId={pedidoId} // ✅ Ahora es number
-                estadoPedido={estadoPedido}
-                onPaymentCreated={handlePaymentCreated}
-                onPaymentError={handlePaymentError}
-              />
+        {/* Contenido scrolleable */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Loading */}
+          {loading && (
+            <div className="p-6">
+              <Loading message="Procesando pedido..." />
             </div>
+          )}
 
-            <button
-              onClick={handleCerrarMensaje}
-              className="btn-cerrar-mensaje"
-            >
-              Cerrar y mantener pedido
-            </button>
-          </div>
-        )}
-
-        {/* Carrito vacío */}
-        {!loading && !mensajePedido && items.length === 0 && (
-          <div className="carrito-vacio">
-            <p>🛒 Tu carrito está vacío</p>
-            <p className="carrito-vacio-subtitle">
-              Explora nuestros productos y agrega lo que te guste
-            </p>
-          </div>
-        )}
-
-        {/* Lista de items */}
-        {!loading && !mensajePedido && items.length > 0 && (
-          <>
-            <div className="carrito-items">
-              {items.map((item) => (
-                <CarritoItem key={item.instrumento.idInstrumento} item={item} />
-              ))}
-            </div>
-
-            {/* Resumen */}
-            <div className="carrito-summary">
-              <p className="total-items">
-                Total: ({totalItems} {totalItems === 1 ? "ítem" : "ítems"})
-              </p>
-              <p className="total-price">${totalPrecio.toLocaleString()}</p>
-            </div>
-
-            {/* Advertencia de stock */}
-            {hayItemsSinStock && (
-              <div className="mensaje-error" style={{ margin: "0 1.5rem" }}>
-                <p>
-                  ⚠️ Algunos productos tienen stock insuficiente. Ajusta las
-                  cantidades antes de continuar.
-                </p>
+          {/* Error */}
+          {error && !loading && (
+            <div className="m-6 bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center space-x-2 text-red-600">
+                <span>❌</span>
+                <p className="text-sm font-medium">{error}</p>
               </div>
-            )}
-
-            {/* Acciones */}
-            <div className="carrito-actions">
-              <button
-                className="btn-vaciar"
-                onClick={handleVaciarCarrito}
-                disabled={loading}
-              >
-                Vaciar carrito
-              </button>
-
-              <button
-                className="btn-guardar"
-                onClick={handleGuardarPedido}
-                disabled={loading || hayItemsSinStock || !isAuthenticated}
-                title={
-                  !isAuthenticated
-                    ? "Debes iniciar sesión para realizar un pedido"
-                    : hayItemsSinStock
-                      ? "Ajusta las cantidades antes de continuar"
-                      : "Confirmar pedido"
-                }
-              >
-                {isAuthenticated ? "Confirmar Pedido" : "Realizar Pedido"}
-              </button>
             </div>
+          )}
 
-            {/* Mensaje para usuarios no autenticados */}
-            {!isAuthenticated && (
-              <div className="auth-message">
-                <p>
-                  ℹ️ Para realizar el pedido debes iniciar sesión o registrarte
-                </p>
-                <div className="auth-buttons">
-                  <button className="btn-auth login" onClick={handleLoginClick}>
-                    Iniciar Sesión
-                  </button>
+          {/* Mensaje de éxito con botón de pago */}
+          {mensajePedido && pedidoId && !loading && (
+            <div className="m-6 space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center space-x-2 text-green-600 mb-4">
+                  <span>✅</span>
+                  <p className="text-sm font-medium">{mensajePedido}</p>
+                </div>
+
+                <div className="space-y-3">
+                  <MercadoPagoButton
+                    pedidoId={pedidoId}
+                    estadoPedido={estadoPedido}
+                    onPaymentCreated={handlePaymentCreated}
+                    onPaymentError={handlePaymentError}
+                  />
+
                   <button
-                    className="btn-auth register"
-                    onClick={handleRegistroClick}
+                    onClick={handleCerrarMensaje}
+                    className="w-full bg-white text-musical-slate border-2 border-musical-slate hover:bg-musical-slate hover:text-white py-3 px-4 rounded-lg font-semibold transition-all duration-200"
                   >
-                    Registrarse
+                    Cerrar y mantener pedido
                   </button>
                 </div>
               </div>
-            )}
-          </>
-        )}
+            </div>
+          )}
+
+          {/* Carrito vacío */}
+          {!loading && !mensajePedido && items.length === 0 && (
+            <div className="flex-1 flex items-center justify-center p-12">
+              <div className="text-center max-w-xs">
+                <div className="text-6xl mb-4">🛒</div>
+                <h3 className="text-xl font-bold text-musical-slate mb-2">
+                  Tu carrito está vacío
+                </h3>
+                <p className="text-slate-600 text-sm leading-relaxed">
+                  Explora nuestros productos y agrega lo que te guste
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Lista de items */}
+          {!loading && !mensajePedido && items.length > 0 && (
+            <>
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {items.map((item) => (
+                  <CarritoItem
+                    key={item.instrumento.idInstrumento}
+                    item={item}
+                  />
+                ))}
+              </div>
+
+              {/* Footer con resumen y acciones */}
+              <div className="border-t border-slate-200 p-6 space-y-4 bg-slate-50">
+                {/* Resumen */}
+                <div className="bg-white rounded-lg p-4 border border-slate-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-slate-600">
+                      Total ({totalItems} {totalItems === 1 ? "ítem" : "ítems"})
+                    </span>
+                  </div>
+                  <div className="text-2xl font-bold text-musical-slate">
+                    ${totalPrecio.toLocaleString("es-AR")}
+                  </div>
+                </div>
+
+                {/* Advertencia de stock */}
+                {hayItemsSinStock && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <div className="flex items-start space-x-2 text-red-600 text-sm">
+                      <span className="flex-shrink-0">⚠️</span>
+                      <span>
+                        Algunos productos tienen stock insuficiente. Ajusta las
+                        cantidades antes de continuar.
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Botones de acción */}
+                <div className="space-y-3">
+                  <button
+                    className={`w-full font-bold py-3 px-4 rounded-lg transition-all duration-200 ${
+                      loading || hayItemsSinStock || !isAuthenticated
+                        ? "bg-slate-300 text-slate-500 cursor-not-allowed"
+                        : "bg-gradient-to-r from-musical-teal to-musical-slate text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus:ring-4 focus:ring-musical-teal/20"
+                    }`}
+                    onClick={handleGuardarPedido}
+                    disabled={loading || hayItemsSinStock || !isAuthenticated}
+                    title={
+                      !isAuthenticated
+                        ? "Debes iniciar sesión para realizar un pedido"
+                        : hayItemsSinStock
+                          ? "Ajusta las cantidades antes de continuar"
+                          : "Confirmar pedido"
+                    }
+                  >
+                    <span className="flex items-center justify-center space-x-2">
+                      <span>🛍️</span>
+                      <span>
+                        {isAuthenticated
+                          ? "Confirmar Pedido"
+                          : "Realizar Pedido"}
+                      </span>
+                    </span>
+                  </button>
+
+                  <button
+                    className="w-full bg-white text-slate-600 border-2 border-slate-200 hover:border-red-300 hover:text-red-600 py-3 px-4 rounded-lg font-semibold transition-all duration-200"
+                    onClick={handleVaciarCarrito}
+                    disabled={loading}
+                  >
+                    <span className="flex items-center justify-center space-x-2">
+                      <span>🗑️</span>
+                      <span>Vaciar carrito</span>
+                    </span>
+                  </button>
+                </div>
+
+                {/* Mensaje para usuarios no autenticados */}
+                {!isAuthenticated && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                    <div className="flex items-center space-x-2 text-blue-600 text-sm">
+                      <span>ℹ️</span>
+                      <span>
+                        Para realizar el pedido debes iniciar sesión o
+                        registrarte
+                      </span>
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        className="flex-1 bg-musical-teal text-white py-2 px-3 rounded-lg text-sm font-semibold hover:bg-musical-slate transition-colors duration-200"
+                        onClick={handleLoginClick}
+                      >
+                        Iniciar Sesión
+                      </button>
+                      <button
+                        className="flex-1 bg-white text-musical-teal border-2 border-musical-teal hover:bg-musical-teal hover:text-white py-2 px-3 rounded-lg text-sm font-semibold transition-all duration-200"
+                        onClick={handleRegistroClick}
+                      >
+                        Registrarse
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

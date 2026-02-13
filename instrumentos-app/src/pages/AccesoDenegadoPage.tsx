@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import "./AuthPages.css";
 import "./AccesoDenegadoPage.css";
 
 const AccesoDenegadoPage = () => {

@@ -4,7 +4,6 @@ import { adminUserService } from "../service/adminUserService";
 import { UserRol, Usuario } from "../types/auth";
 import { useAuth } from "../context/AuthContext";
 import Loading from "../components/common/Loading";
-import "./AdminStyles.css";
 
 const GestionUsuariosPage = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
@@ -187,138 +186,244 @@ const GestionUsuariosPage = () => {
   }
 
   return (
-    <div className="admin-page">
+    <div className="min-h-screen bg-slate-50">
       {/* Header de la página */}
-      <div className="page-header">
-        <h1>👥 Gestión de Usuarios</h1>
-        <p>Administración de usuarios y roles del sistema</p>
-        <div className="admin-info">
-          <span className="admin-user">
-            👤 {user.email} <span className="role-badge admin">ADMIN</span>
-          </span>
+      <div className="bg-gradient-to-r from-musical-slate via-musical-teal to-musical-slate py-8 px-4 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-6 left-10 w-24 h-24 bg-white rounded-full blur-2xl"></div>
+          <div className="absolute bottom-6 right-10 w-20 h-20 bg-white rounded-full blur-2xl"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                <span className="text-3xl">👥</span>
+              </div>
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">
+                  Gestión de Usuarios
+                </h1>
+                <p className="text-white/80 text-lg">
+                  Administración de usuarios y roles del sistema
+                </p>
+              </div>
+            </div>
+
+            <div className="hidden sm:flex items-center space-x-4">
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/30">
+                <div className="flex items-center space-x-2 text-white">
+                  <span className="text-sm">👤</span>
+                  <span className="font-medium">{user.email}</span>
+                  <span className="bg-emerald-400 text-emerald-900 px-3 py-1 rounded-lg text-xs font-bold">
+                    ADMIN
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Mensajes de feedback */}
-      {error && (
-        <div className="alert alert-error" role="alert">
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="alert alert-success" role="alert">
-          {success}
-        </div>
-      )}
-
-      {/* Lista de usuarios */}
-      <div className="users-section">
-        <div className="section-header">
-          <h2>Usuarios del Sistema ({usuarios.length})</h2>
-          <button
-            onClick={loadUsuarios}
-            className="btn-refresh"
-            disabled={loading}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Mensajes de feedback */}
+        {error && (
+          <div
+            className="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg"
+            role="alert"
           >
-            🔄 Actualizar
-          </button>
-        </div>
-
-        {usuarios.length === 0 ? (
-          <div className="no-data">
-            <p>📭 No hay usuarios registrados en el sistema.</p>
-          </div>
-        ) : (
-          <div className="table-responsive">
-            <table className="users-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Nombre Completo</th>
-                  <th>Email</th>
-                  <th>Rol</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {usuarios.map((usuario) => {
-                  const isCurrent = isCurrentUser(usuario.id);
-                  const isUpdating = updatingUserId === usuario.id;
-
-                  return (
-                    <tr
-                      key={usuario.id}
-                      className={`${!usuario.activo ? "inactive-row" : ""} ${isCurrent ? "current-user-row" : ""}`}
-                    >
-                      <td>{usuario.id}</td>
-                      <td className="user-name-cell">
-                        {`${usuario.nombre} ${usuario.apellido}`}
-                        {isCurrent && (
-                          <span className="current-user-badge">TÚ</span>
-                        )}
-                      </td>
-                      <td>{usuario.email}</td>
-                      <td>
-                        {isCurrent ? (
-                          <span
-                            className={`role-badge ${usuario.rol.toLowerCase()}`}
-                          >
-                            {usuario.rol}
-                          </span>
-                        ) : (
-                          <select
-                            value={usuario.rol}
-                            onChange={(e) =>
-                              handleRoleChange(
-                                usuario.id,
-                                e.target.value as UserRol,
-                              )
-                            }
-                            className="role-select"
-                            disabled={isUpdating}
-                          >
-                            <option value={UserRol.USER}>USER</option>
-                            <option value={UserRol.ADMIN}>ADMIN</option>
-                          </select>
-                        )}
-                      </td>
-                      <td>
-                        <span
-                          className={`status-badge ${usuario.activo ? "active" : "inactive"}`}
-                        >
-                          {usuario.activo ? "✅ Activo" : "❌ Inactivo"}
-                        </span>
-                      </td>
-                      <td>
-                        {isCurrent ? (
-                          <span className="no-action">
-                            No puedes modificar tu propio usuario
-                          </span>
-                        ) : (
-                          <button
-                            className={`btn btn-sm ${usuario.activo ? "btn-warning" : "btn-success"}`}
-                            onClick={() =>
-                              handleStatusChange(usuario.id, !usuario.activo)
-                            }
-                            disabled={isUpdating}
-                          >
-                            {isUpdating
-                              ? "⏳ Actualizando..."
-                              : usuario.activo
-                                ? "🚫 Deshabilitar"
-                                : "✅ Habilitar"}
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="flex items-center space-x-2">
+              <span className="text-red-400 text-lg">❌</span>
+              <p className="text-red-800 font-medium">{error}</p>
+            </div>
           </div>
         )}
+
+        {success && (
+          <div
+            className="mb-6 bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg"
+            role="alert"
+          >
+            <div className="flex items-center space-x-2">
+              <span className="text-green-400 text-lg">✅</span>
+              <p className="text-green-800 font-medium">{success}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Lista de usuarios */}
+        <div className="bg-white rounded-2xl shadow-lg border border-slate-200">
+          <div className="p-6 border-b border-slate-200">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-musical-slate flex items-center">
+                  <span className="mr-3">👥</span>
+                  Usuarios del Sistema ({usuarios.length})
+                </h2>
+                <p className="text-slate-600 mt-1">
+                  Gestiona roles y estados de los usuarios
+                </p>
+              </div>
+
+              <button
+                onClick={loadUsuarios}
+                className="inline-flex items-center bg-gradient-to-r from-musical-teal to-musical-slate text-white font-bold px-6 py-3 rounded-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 space-x-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-lg"
+                disabled={loading}
+              >
+                <span className="text-lg">🔄</span>
+                <span>Actualizar</span>
+              </button>
+            </div>
+          </div>
+
+          {usuarios.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="max-w-md mx-auto">
+                <div className="text-6xl mb-4">📭</div>
+                <h3 className="text-xl font-bold text-musical-slate mb-3">
+                  No hay usuarios registrados
+                </h3>
+                <p className="text-slate-600 text-sm">
+                  No hay usuarios registrados en el sistema.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      ID
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Nombre Completo
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Rol
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Estado
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {usuarios.map((usuario) => {
+                    const isCurrent = isCurrentUser(usuario.id);
+                    const isUpdating = updatingUserId === usuario.id;
+
+                    return (
+                      <tr
+                        key={usuario.id}
+                        className={`border-b border-slate-100 hover:bg-slate-50 transition-colors duration-150 ${
+                          !usuario.activo ? "bg-red-50/30" : ""
+                        } ${isCurrent ? "bg-blue-50/50" : ""}`}
+                      >
+                        <td className="px-6 py-4 text-sm font-medium text-musical-slate">
+                          {usuario.id}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center space-x-3">
+                            <span className="text-sm font-medium text-musical-slate">
+                              {`${usuario.nombre} ${usuario.apellido}`}
+                            </span>
+                            {isCurrent && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+                                TÚ
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600">
+                          {usuario.email}
+                        </td>
+                        <td className="px-6 py-4">
+                          {isCurrent ? (
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                usuario.rol === "ADMIN"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : "bg-slate-100 text-slate-800"
+                              }`}
+                            >
+                              {usuario.rol}
+                            </span>
+                          ) : (
+                            <select
+                              value={usuario.rol}
+                              onChange={(e) =>
+                                handleRoleChange(
+                                  usuario.id,
+                                  e.target.value as UserRol,
+                                )
+                              }
+                              className="text-xs border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-musical-slate focus:border-musical-teal focus:ring-2 focus:ring-musical-teal/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                              disabled={isUpdating}
+                            >
+                              <option value={UserRol.USER}>USER</option>
+                              <option value={UserRol.ADMIN}>ADMIN</option>
+                            </select>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              usuario.activo
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {usuario.activo ? "✅ Activo" : "❌ Inactivo"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          {isCurrent ? (
+                            <span className="text-xs text-slate-500 italic">
+                              No puedes modificar tu propio usuario
+                            </span>
+                          ) : (
+                            <button
+                              className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 space-x-1 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                usuario.activo
+                                  ? "bg-red-50 text-red-600 hover:bg-red-100"
+                                  : "bg-green-50 text-green-600 hover:bg-green-100"
+                              }`}
+                              onClick={() =>
+                                handleStatusChange(usuario.id, !usuario.activo)
+                              }
+                              disabled={isUpdating}
+                            >
+                              <span>
+                                {isUpdating
+                                  ? "⏳"
+                                  : usuario.activo
+                                    ? "🚫"
+                                    : "✅"}
+                              </span>
+                              <span>
+                                {isUpdating
+                                  ? "Actualizando..."
+                                  : usuario.activo
+                                    ? "Deshabilitar"
+                                    : "Habilitar"}
+                              </span>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

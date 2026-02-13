@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Instrumento } from "../../types/types";
 import { useCategorias } from "../../hooks/useCategorias";
-import "./InstrumentoForm.css";
 import { uploadImagen } from "../../service/api";
 
 interface InstrumentoFormProps {
@@ -291,237 +290,451 @@ const InstrumentoForm = ({
   };
 
   return (
-    <div className="instrumento-form-container">
-      <form className="instrumento-form" onSubmit={handleSubmit}>
-        <h2 className="form-title">
-          {instrumento ? "Editar Instrumento" : "Nuevo Instrumento"}
-        </h2>
+    <div className="max-w-4xl mx-auto">
+      <form className="space-y-8" onSubmit={handleSubmit}>
+        {/* Título del formulario */}
+        <div className="text-center border-b border-slate-200 pb-6">
+          <h2 className="text-3xl font-bold text-musical-slate flex items-center justify-center">
+            <span className="mr-3 text-4xl">{instrumento ? "✏️" : "➕"}</span>
+            {instrumento ? "Editar Instrumento" : "Nuevo Instrumento"}
+          </h2>
+          <p className="text-slate-600 mt-2">
+            {instrumento
+              ? "Modifica la información del instrumento"
+              : "Completa todos los campos para agregar un nuevo instrumento"}
+          </p>
+        </div>
 
         {/* Denominación */}
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="denominacion">
-              Denominación <span className="required">*</span>
-            </label>
-            <input
-              type="text"
-              id="denominacion"
-              name="denominacion"
-              value={formData.denominacion}
-              onChange={handleChange}
-              className={errors.denominacion ? "error" : ""}
-              disabled={isSubmitting}
-              placeholder="Ej: Guitarra Eléctrica Stratocaster"
-              maxLength={100}
-            />
-            {errors.denominacion && (
-              <span className="error-text">{errors.denominacion}</span>
-            )}
-          </div>
-        </div>
+        <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+          <h3 className="text-lg font-semibold text-musical-slate mb-4 flex items-center">
+            <span className="mr-2">🎵</span>
+            Información básica
+          </h3>
 
-        {/* Marca y Categoría */}
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="marca">
-              Marca <span className="required">*</span>
-            </label>
-            <input
-              type="text"
-              id="marca"
-              name="marca"
-              value={formData.marca}
-              onChange={handleChange}
-              className={errors.marca ? "error" : ""}
-              disabled={isSubmitting}
-              placeholder="Ej: Fender"
-              maxLength={50}
-            />
-            {errors.marca && <span className="error-text">{errors.marca}</span>}
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="idCategoriaInstrumento">
-              Categoría <span className="required">*</span>
-            </label>
-            <select
-              id="idCategoriaInstrumento"
-              name="idCategoriaInstrumento"
-              value={formData.categoriaInstrumento.idCategoriaInstrumento}
-              onChange={handleChange}
-              className={errors.idCategoriaInstrumento ? "error" : ""}
-              disabled={isSubmitting || loadingCategorias}
-            >
-              <option value="0">
-                {loadingCategorias ? "Cargando..." : "Seleccione una categoría"}
-              </option>
-              {categorias.map((categoria) => (
-                <option
-                  key={categoria.idCategoriaInstrumento}
-                  value={categoria.idCategoriaInstrumento}
-                >
-                  {categoria.denominacion}
-                </option>
-              ))}
-            </select>
-            {errors.idCategoriaInstrumento && (
-              <span className="error-text">
-                {errors.idCategoriaInstrumento}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Precio y Stock */}
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="precioActual">
-              Precio <span className="required">*</span>
-            </label>
-            <input
-              type="number"
-              id="precioActual"
-              name="precioActual"
-              min="0.01"
-              step="0.01"
-              value={formData.precioActual || ""}
-              onChange={handleChange}
-              className={errors.precioActual ? "error" : ""}
-              disabled={isSubmitting}
-              placeholder="0.00"
-            />
-            {errors.precioActual && (
-              <span className="error-text">{errors.precioActual}</span>
-            )}
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="stock">
-              Stock <span className="required">*</span>
-            </label>
-            <input
-              type="number"
-              id="stock"
-              name="stock"
-              min="0"
-              step="1"
-              value={formData.stock}
-              onChange={handleChange}
-              className={errors.stock ? "error" : ""}
-              disabled={isSubmitting}
-              placeholder="0"
-            />
-            {errors.stock && <span className="error-text">{errors.stock}</span>}
-          </div>
-        </div>
-
-        {/* Imagen */}
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="imagen">
-              Imagen <span className="required">*</span>
-            </label>
-            <input
-              type="file"
-              id="imagen"
-              name="imagen"
-              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-              onChange={handleImageChange}
-              disabled={isSubmitting || uploading}
-            />
-            {uploading && (
-              <span className="upload-status">⏳ Subiendo imagen...</span>
-            )}
-            {errors.imagen && (
-              <span className="error-text">{errors.imagen}</span>
-            )}
-
-            {/* ✅ Vista previa mejorada */}
-            <div className="image-preview-container">
-              {previewUrl ? (
-                // 1. Muestra la nueva imagen seleccionada
-                <img
-                  src={previewUrl}
-                  alt="Vista previa de la nueva imagen"
-                  className="image-preview"
-                />
-              ) : formData.imagen ? (
-                // 2. Muestra la imagen existente si no hay nueva
-                <img
-                  src={getImageUrl(formData.imagen) || ""}
-                  alt="Imagen actual"
-                  className="image-preview"
-                  onError={(e) => {
-                    console.error(
-                      "❌ Error al cargar imagen:",
-                      formData.imagen,
-                    );
-                    e.currentTarget.src = "/images/placeholder.jpg";
-                  }}
-                />
-              ) : null}
-
-              {/* Botón para eliminar la imagen */}
-              {(formData.imagen || previewUrl) && (
-                <button
-                  type="button"
-                  className="btn btn-danger btn-sm"
-                  onClick={handleRemoveImage}
-                  disabled={isSubmitting || uploading}
-                >
-                  🗑️ Eliminar Imagen
-                </button>
+          <div className="space-y-6">
+            <div>
+              <label
+                htmlFor="denominacion"
+                className="block text-sm font-semibold text-musical-slate mb-2"
+              >
+                Denominación <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                id="denominacion"
+                name="denominacion"
+                value={formData.denominacion}
+                onChange={handleChange}
+                className={`w-full px-4 py-3 border-2 rounded-lg text-slate-800 placeholder-slate-400 focus:ring-4 transition-all disabled:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 ${
+                  errors.denominacion
+                    ? "border-red-300 focus:border-red-500 focus:ring-red-500/20"
+                    : "border-slate-200 focus:border-musical-teal focus:ring-musical-teal/10"
+                }`}
+                disabled={isSubmitting}
+                placeholder="Ej: Guitarra Eléctrica Stratocaster"
+                maxLength={100}
+              />
+              {errors.denominacion && (
+                <p className="mt-1 text-sm text-red-600 flex items-center">
+                  <span className="mr-1">⚠️</span>
+                  {errors.denominacion}
+                </p>
               )}
+            </div>
+
+            {/* Marca y Categoría */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label
+                  htmlFor="marca"
+                  className="block text-sm font-semibold text-musical-slate mb-2"
+                >
+                  Marca <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="marca"
+                  name="marca"
+                  value={formData.marca}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 border-2 rounded-lg text-slate-800 placeholder-slate-400 focus:ring-4 transition-all disabled:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 ${
+                    errors.marca
+                      ? "border-red-300 focus:border-red-500 focus:ring-red-500/20"
+                      : "border-slate-200 focus:border-musical-teal focus:ring-musical-teal/10"
+                  }`}
+                  disabled={isSubmitting}
+                  placeholder="Ej: Fender"
+                  maxLength={50}
+                />
+                {errors.marca && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <span className="mr-1">⚠️</span>
+                    {errors.marca}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="idCategoriaInstrumento"
+                  className="block text-sm font-semibold text-musical-slate mb-2"
+                >
+                  Categoría <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="idCategoriaInstrumento"
+                  name="idCategoriaInstrumento"
+                  value={formData.categoriaInstrumento.idCategoriaInstrumento}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 border-2 rounded-lg text-slate-800 focus:ring-4 transition-all disabled:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 ${
+                    errors.idCategoriaInstrumento
+                      ? "border-red-300 focus:border-red-500 focus:ring-red-500/20"
+                      : "border-slate-200 focus:border-musical-teal focus:ring-musical-teal/10"
+                  }`}
+                  disabled={isSubmitting || loadingCategorias}
+                >
+                  <option value="0">
+                    {loadingCategorias
+                      ? "Cargando..."
+                      : "Seleccione una categoría"}
+                  </option>
+                  {categorias.map((categoria) => (
+                    <option
+                      key={categoria.idCategoriaInstrumento}
+                      value={categoria.idCategoriaInstrumento}
+                    >
+                      {categoria.denominacion}
+                    </option>
+                  ))}
+                </select>
+                {errors.idCategoriaInstrumento && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <span className="mr-1">⚠️</span>
+                    {errors.idCategoriaInstrumento}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
+        {/* Precio y Stock */}
+        <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+          <h3 className="text-lg font-semibold text-musical-slate mb-4 flex items-center">
+            <span className="mr-2">💰</span>
+            Precio e inventario
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label
+                htmlFor="precioActual"
+                className="block text-sm font-semibold text-musical-slate mb-2"
+              >
+                Precio <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 font-medium">
+                  $
+                </span>
+                <input
+                  type="number"
+                  id="precioActual"
+                  name="precioActual"
+                  min="0.01"
+                  step="0.01"
+                  value={formData.precioActual || ""}
+                  onChange={handleChange}
+                  className={`w-full pl-8 pr-4 py-3 border-2 rounded-lg text-slate-800 placeholder-slate-400 focus:ring-4 transition-all disabled:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 ${
+                    errors.precioActual
+                      ? "border-red-300 focus:border-red-500 focus:ring-red-500/20"
+                      : "border-slate-200 focus:border-musical-teal focus:ring-musical-teal/10"
+                  }`}
+                  disabled={isSubmitting}
+                  placeholder="0.00"
+                />
+              </div>
+              {errors.precioActual && (
+                <p className="mt-1 text-sm text-red-600 flex items-center">
+                  <span className="mr-1">⚠️</span>
+                  {errors.precioActual}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="stock"
+                className="block text-sm font-semibold text-musical-slate mb-2"
+              >
+                Stock <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                id="stock"
+                name="stock"
+                min="0"
+                step="1"
+                value={formData.stock}
+                onChange={handleChange}
+                className={`w-full px-4 py-3 border-2 rounded-lg text-slate-800 placeholder-slate-400 focus:ring-4 transition-all disabled:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 ${
+                  errors.stock
+                    ? "border-red-300 focus:border-red-500 focus:ring-red-500/20"
+                    : "border-slate-200 focus:border-musical-teal focus:ring-musical-teal/10"
+                }`}
+                disabled={isSubmitting}
+                placeholder="0"
+              />
+              {errors.stock && (
+                <p className="mt-1 text-sm text-red-600 flex items-center">
+                  <span className="mr-1">⚠️</span>
+                  {errors.stock}
+                </p>
+              )}
+              <p className="mt-1 text-xs text-slate-600">
+                Número de unidades disponibles para la venta
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Imagen */}
+        <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+          <h3 className="text-lg font-semibold text-musical-slate mb-4 flex items-center">
+            <span className="mr-2">🖼️</span>
+            Imagen del instrumento
+          </h3>
+
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="imagen"
+                className="block text-sm font-semibold text-musical-slate mb-2"
+              >
+                Subir imagen <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="file"
+                id="imagen"
+                name="imagen"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                onChange={handleImageChange}
+                disabled={isSubmitting || uploading}
+                className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-musical-teal file:text-white hover:file:bg-musical-slate file:cursor-pointer cursor-pointer border-2 border-dashed border-slate-300 rounded-lg p-4 hover:border-musical-teal transition-colors"
+              />
+              <p className="mt-1 text-xs text-slate-600">
+                Formatos soportados: JPG, PNG, GIF, WEBP. Tamaño máximo: 5MB
+              </p>
+
+              {uploading && (
+                <div className="mt-2 flex items-center text-musical-teal text-sm font-medium">
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Subiendo imagen...
+                </div>
+              )}
+
+              {errors.imagen && (
+                <p className="mt-2 text-sm text-red-600 flex items-center">
+                  <span className="mr-1">⚠️</span>
+                  {errors.imagen}
+                </p>
+              )}
+            </div>
+
+            {/* Vista previa mejorada */}
+            {(previewUrl || formData.imagen) && (
+              <div className="bg-white rounded-xl p-4 border border-slate-200">
+                <div className="flex items-start justify-between mb-3">
+                  <h4 className="text-sm font-semibold text-musical-slate">
+                    Vista previa:
+                  </h4>
+                  <button
+                    type="button"
+                    className="px-3 py-1 bg-red-100 text-red-600 text-xs font-medium rounded-lg hover:bg-red-200 transition-colors"
+                    onClick={handleRemoveImage}
+                    disabled={isSubmitting || uploading}
+                  >
+                    🗑️ Eliminar
+                  </button>
+                </div>
+
+                <div className="flex justify-center">
+                  <div className="w-48 h-48 bg-slate-100 rounded-xl overflow-hidden border-2 border-slate-200">
+                    {previewUrl ? (
+                      <img
+                        src={previewUrl}
+                        alt="Vista previa de la nueva imagen"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : formData.imagen ? (
+                      <img
+                        src={getImageUrl(formData.imagen) || ""}
+                        alt="Imagen actual"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error(
+                            "❌ Error al cargar imagen:",
+                            formData.imagen,
+                          );
+                          e.currentTarget.src = "/images/placeholder.jpg";
+                        }}
+                      />
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Descripción */}
-        <div className="form-group">
-          <label htmlFor="descripcion">
-            Descripción <span className="required">*</span>
-          </label>
-          <textarea
-            id="descripcion"
-            name="descripcion"
-            value={formData.descripcion}
-            onChange={handleChange}
-            rows={5}
-            className={errors.descripcion ? "error" : ""}
-            disabled={isSubmitting}
-            placeholder="Describe el instrumento, características principales, etc."
-            maxLength={500}
-          ></textarea>
-          <small className="char-count">
-            {formData.descripcion.length}/500 caracteres
-          </small>
-          {errors.descripcion && (
-            <span className="error-text">{errors.descripcion}</span>
-          )}
+        <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+          <h3 className="text-lg font-semibold text-musical-slate mb-4 flex items-center">
+            <span className="mr-2">📝</span>
+            Descripción
+          </h3>
+
+          <div>
+            <label
+              htmlFor="descripcion"
+              className="block text-sm font-semibold text-musical-slate mb-2"
+            >
+              Descripción del instrumento{" "}
+              <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              id="descripcion"
+              name="descripcion"
+              value={formData.descripcion}
+              onChange={handleChange}
+              rows={5}
+              className={`w-full px-4 py-3 border-2 rounded-lg text-slate-800 placeholder-slate-400 focus:ring-4 transition-all disabled:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 resize-none ${
+                errors.descripcion
+                  ? "border-red-300 focus:border-red-500 focus:ring-red-500/20"
+                  : "border-slate-200 focus:border-musical-teal focus:ring-musical-teal/10"
+              }`}
+              disabled={isSubmitting}
+              placeholder="Describe el instrumento, características principales, materiales, etc."
+              maxLength={500}
+            ></textarea>
+
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-xs text-slate-600">
+                Incluye detalles importantes que ayuden a los clientes
+              </p>
+              <span
+                className={`text-xs font-medium ${
+                  formData.descripcion.length > 450
+                    ? "text-musical-warning"
+                    : "text-slate-500"
+                }`}
+              >
+                {formData.descripcion.length}/500
+              </span>
+            </div>
+
+            {errors.descripcion && (
+              <p className="mt-2 text-sm text-red-600 flex items-center">
+                <span className="mr-1">⚠️</span>
+                {errors.descripcion}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Acciones */}
-        <div className="form-actions">
+        <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-slate-200">
           <button
             type="button"
-            className="btn btn-secondary"
+            className="flex-1 px-6 py-3 bg-white text-slate-600 border-2 border-slate-200 rounded-lg font-semibold hover:bg-slate-50 hover:border-slate-300 focus:ring-4 focus:ring-slate-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={onCancel}
             disabled={isSubmitting}
           >
             Cancelar
           </button>
+
           <button
             type="submit"
-            className="btn btn-primary"
+            className={`flex-1 px-6 py-3 rounded-lg font-semibold focus:ring-4 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+              isSubmitting || uploading
+                ? "bg-slate-400 text-white cursor-not-allowed"
+                : "bg-gradient-to-r from-musical-teal to-musical-slate text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus:ring-musical-teal/20"
+            }`}
             disabled={isSubmitting || uploading}
           >
-            {isSubmitting
-              ? "Guardando..."
-              : uploading
-                ? "Subiendo imagen..."
-                : instrumento
-                  ? "✅ Actualizar"
-                  : "➕ Crear"}
+            <span className="flex items-center justify-center space-x-2">
+              {isSubmitting ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  <span>Guardando...</span>
+                </>
+              ) : uploading ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  <span>Subiendo imagen...</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-lg">{instrumento ? "✅" : "➕"}</span>
+                  <span>{instrumento ? "Actualizar" : "Crear"}</span>
+                </>
+              )}
+            </span>
           </button>
         </div>
       </form>
