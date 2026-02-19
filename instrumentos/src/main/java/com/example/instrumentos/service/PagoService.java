@@ -401,8 +401,8 @@ public class PagoService {
 
             // ✅ PREPARAR PAYER
             PreferencePayerRequest payer = PreferencePayerRequest.builder()
-                    .email("testuser@testuser.com") // ✅ Email válido para sandbox
-                    .name("Test User")
+                    .email("test_user_8621830017045034568@testuser.com")
+                    .name("Test")
                     .surname("Test")
                     .build();
 
@@ -412,8 +412,8 @@ public class PagoService {
                     .backUrls(backUrls)
                     .payer(payer)
                     .externalReference(pedidoId.toString())
-                    .expires(false);
-            // ✅ REMOVIDO: .autoReturn("approved") - esto causaba el error
+                    .expires(false)
+                    .autoReturn("approved");
 
             // ✅ CONFIGURAR NOTIFICATION URL SOLO SI ESTÁ DISPONIBLE
             if (mercadoPagoConfig.getNotificationUrl() != null

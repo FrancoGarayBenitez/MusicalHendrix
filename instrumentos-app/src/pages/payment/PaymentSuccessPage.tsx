@@ -6,7 +6,7 @@ import "./PaymentPages.css";
 const PaymentSuccessPage: React.FC = () => {
   const navigate = useNavigate();
   const { limpiarPedidoPendiente } = useCarritoContext();
-  const [countdown, setCountdown] = useState(10);
+  const [countdown, setCountdown] = useState(5);
 
   // Al cargar la página de éxito, nos aseguramos de que el estado de
   // pedido pendiente en la app se limpie.

@@ -19,6 +19,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -366,5 +367,18 @@ public class PagoController {
             default:
                 return "Estado: " + estado;
         }
+    }
+
+    @GetMapping("/payment/redirect")
+    @PreAuthorize("permitAll()") // 👈 Crucial para que no pida login al redirigir
+    public ResponseEntity<Void> redirectAfterPayment(HttpServletRequest request) {
+        String queryParams = request.getQueryString();
+        String frontendUrl = "http://localhost:5173/payment/pending?" + queryParams;
+
+        log.info("Redirecting to frontend: {}", frontendUrl);
+
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create(frontendUrl))
+                .build();
     }
 }

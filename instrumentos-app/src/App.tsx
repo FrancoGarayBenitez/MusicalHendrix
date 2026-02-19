@@ -40,9 +40,6 @@ import GestionPedidosPage from "./pages/GestionPedidosPage";
 // ===== TYPES =====
 import { UserRol } from "./types/auth";
 
-// ===== STYLES =====
-import "./pages/AdminStyles.css";
-
 function App() {
   return (
     <AuthProvider>

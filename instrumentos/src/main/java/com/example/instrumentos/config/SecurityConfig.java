@@ -50,7 +50,9 @@ public class SecurityConfig {
                                 "/auth/forgot-password",
                                 "/auth/reset-password",
                                 "/auth/verify-reset-token/**",
-                                "/pagos/webhook",
+                                "/pagos/webhook/**",
+                                "/pagos/payment/redirect",
+                                "/pagos/webhook/test",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**")
                         .permitAll()
